@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189
+class ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1
 {
     public static $prefixLengthsPsr4 = array (
         'l' => 
@@ -180,6 +180,7 @@ class ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189
         'Payplug\\Exception\\UndefinedAttributeException' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Exception/UndefinedAttributeException.php',
         'Payplug\\Exception\\UnexpectedAPIResponseException' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Exception/UnexpectedAPIResponseException.php',
         'Payplug\\Exception\\UnknownAPIResourceException' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Exception/UnknownAPIResourceException.php',
+        'Payplug\\Exception\\UnprocessableEntityException' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Exception/UnprocessableEntityException.php',
         'Payplug\\InstallmentPlan' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/InstallmentPlan.php',
         'Payplug\\Notification' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Notification.php',
         'Payplug\\OneySimulation' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/OneySimulation.php',
@@ -250,6 +251,7 @@ class ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerce' => __DIR__ . '/../..' . '/src/PayplugWoocommerce.php',
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerceHelper' => __DIR__ . '/../..' . '/src/PayplugWoocommerceHelper.php',
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerceRequest' => __DIR__ . '/../..' . '/src/PayplugWoocommerceRequest.php',
+        'Payplug\\PluginTelemetry' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/PluginTelemetry.php',
         'Payplug\\Refund' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Refund.php',
         'Payplug\\Resource\\APIResource' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Resource/APIResource.php',
         'Payplug\\Resource\\AccountingReport' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Resource/AccountingReport.php',
@@ -293,10 +295,10 @@ class ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit43cb0f52fe39a8ed4d3302b172e3d189::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1::$classMap;
 
         }, null, ClassLoader::class);
     }

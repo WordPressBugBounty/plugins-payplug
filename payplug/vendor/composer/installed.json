@@ -156,17 +156,17 @@
         },
         {
             "name": "payplug/payplug-php",
-            "version": "3.5.4",
-            "version_normalized": "3.5.4.0",
+            "version": "v3.5.7",
+            "version_normalized": "3.5.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/payplug/payplug-php.git",
-                "reference": "9fe3787e8ad98500141168447bb2b84c47c43be2"
+                "reference": "e2cfe35fd78f00bed2404377bab078f2dd746984"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/payplug/payplug-php/zipball/9fe3787e8ad98500141168447bb2b84c47c43be2",
-                "reference": "9fe3787e8ad98500141168447bb2b84c47c43be2",
+                "url": "https://api.github.com/repos/payplug/payplug-php/zipball/e2cfe35fd78f00bed2404377bab078f2dd746984",
+                "reference": "e2cfe35fd78f00bed2404377bab078f2dd746984",
                 "shasum": ""
             },
             "require": {
@@ -203,7 +203,7 @@
             "homepage": "https://www.payplug.com",
             "support": {
                 "issues": "https://github.com/payplug/payplug-php/issues",
-                "source": "https://github.com/payplug/payplug-php/tree/3.5.4"
+                "source": "https://github.com/payplug/payplug-php/tree/v3.5.7"
             },
             "install-path": "../payplug/payplug-php"
         }
