@@ -188,6 +188,7 @@ return array(
     'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Satispay' => $baseDir . '/src/Gateway/PPRO/Satispay.php',
     'Payplug\\PayplugWoocommerce\\Gateway\\PayplugAddressData' => $baseDir . '/src/Gateway/PayplugAddressData.php',
     'Payplug\\PayplugWoocommerce\\Gateway\\PayplugApi' => $baseDir . '/src/Gateway/PayplugApi.php',
+    'Payplug\\PayplugWoocommerce\\Gateway\\PayplugCreditCard' => $baseDir . '/src/Gateway/PayplugCreditCard.php',
     'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGateway' => $baseDir . '/src/Gateway/PayplugGateway.php',
     'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGatewayOney3x' => $baseDir . '/src/Gateway/PayplugGatewayOney3x.php',
     'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGatewayOney3xWithoutFees' => $baseDir . '/src/Gateway/PayplugGatewayOney3xWithoutFees.php',

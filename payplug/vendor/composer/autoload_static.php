@@ -234,6 +234,7 @@ class ComposerStaticInit0c69ec5d96bb42968bb3e853c64583b1
         'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Satispay' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Satispay.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugAddressData' => __DIR__ . '/../..' . '/src/Gateway/PayplugAddressData.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugApi' => __DIR__ . '/../..' . '/src/Gateway/PayplugApi.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\PayplugCreditCard' => __DIR__ . '/../..' . '/src/Gateway/PayplugCreditCard.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGateway' => __DIR__ . '/../..' . '/src/Gateway/PayplugGateway.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGatewayOney3x' => __DIR__ . '/../..' . '/src/Gateway/PayplugGatewayOney3x.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugGatewayOney3xWithoutFees' => __DIR__ . '/../..' . '/src/Gateway/PayplugGatewayOney3xWithoutFees.php',
