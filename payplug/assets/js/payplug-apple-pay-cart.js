@@ -119,6 +119,10 @@
 					"visa",
 					"masterCard"
 				],
+            	"supportedTypes": [
+					"debit",
+					"credit"
+				],
 				"total": {
 					"label": "Apple Pay",
 					"type": "final",
@@ -140,7 +144,7 @@
 				],
 			}
 
-			session = new ApplePaySession(3, request);
+			session = new ApplePaySession(4, request);
 
 		},
 		BeginSession: function (response) {

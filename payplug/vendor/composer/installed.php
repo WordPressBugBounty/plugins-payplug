@@ -3,7 +3,7 @@
         'name' => 'payplug/payplug-woocommerce',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'e055e8004c971a6b1d5b2ed3a79130d7b4b380c9',
+        'reference' => '415eb18b30df4eb370beb29774219bed05114664',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'payplug/payplug-woocommerce' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'e055e8004c971a6b1d5b2ed3a79130d7b4b380c9',
+            'reference' => '415eb18b30df4eb370beb29774219bed05114664',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
