@@ -143,6 +143,7 @@ return array(
     'Payplug\\PayplugWoocommerce\\Admin\\Ajax' => $baseDir . '/src/Admin/Ajax.php',
     'Payplug\\PayplugWoocommerce\\Admin\\Metabox' => $baseDir . '/src/Admin/Metabox.php',
     'Payplug\\PayplugWoocommerce\\Admin\\Notices' => $baseDir . '/src/Admin/Notices.php',
+    'Payplug\\PayplugWoocommerce\\Admin\\SetupCallback' => $baseDir . '/src/Admin/SetupCallback.php',
     'Payplug\\PayplugWoocommerce\\Admin\\Validator' => $baseDir . '/src/Admin/Validator.php',
     'Payplug\\PayplugWoocommerce\\Admin\\Vue' => $baseDir . '/src/Admin/Vue.php',
     'Payplug\\PayplugWoocommerce\\Admin\\Vue\\Component' => $baseDir . '/src/Admin/Vue/Component.php',

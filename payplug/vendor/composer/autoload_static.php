@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd
+class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
 {
     public static $prefixLengthsPsr4 = array (
         'l' => 
@@ -189,6 +189,7 @@ class ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd
         'Payplug\\PayplugWoocommerce\\Admin\\Ajax' => __DIR__ . '/../..' . '/src/Admin/Ajax.php',
         'Payplug\\PayplugWoocommerce\\Admin\\Metabox' => __DIR__ . '/../..' . '/src/Admin/Metabox.php',
         'Payplug\\PayplugWoocommerce\\Admin\\Notices' => __DIR__ . '/../..' . '/src/Admin/Notices.php',
+        'Payplug\\PayplugWoocommerce\\Admin\\SetupCallback' => __DIR__ . '/../..' . '/src/Admin/SetupCallback.php',
         'Payplug\\PayplugWoocommerce\\Admin\\Validator' => __DIR__ . '/../..' . '/src/Admin/Validator.php',
         'Payplug\\PayplugWoocommerce\\Admin\\Vue' => __DIR__ . '/../..' . '/src/Admin/Vue.php',
         'Payplug\\PayplugWoocommerce\\Admin\\Vue\\Component' => __DIR__ . '/../..' . '/src/Admin/Vue/Component.php',
@@ -292,10 +293,10 @@ class ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit6acbbdd2d996e4f1d31208fb3b84b4bd::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$classMap;
 
         }, null, ClassLoader::class);
     }
