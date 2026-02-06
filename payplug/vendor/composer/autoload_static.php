@@ -7,44 +7,44 @@ namespace Composer\Autoload;
 class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
 {
     public static $prefixLengthsPsr4 = array (
-        'l' => 
+        'l' =>
         array (
             'libphonenumber\\' => 15,
         ),
-        'P' => 
+        'P' =>
         array (
             'Payplug\\PayplugWoocommerce\\' => 27,
             'Payplug\\' => 8,
         ),
-        'C' => 
+        'C' =>
         array (
             'Composer\\Installers\\' => 20,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'libphonenumber\\' => 
+        'libphonenumber\\' =>
         array (
             0 => __DIR__ . '/../..' . '/lib/libphonenumber',
         ),
-        'Payplug\\PayplugWoocommerce\\' => 
+        'Payplug\\PayplugWoocommerce\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
-        'Payplug\\' => 
+        'Payplug\\' =>
         array (
             0 => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug',
         ),
-        'Composer\\Installers\\' => 
+        'Composer\\Installers\\' =>
         array (
             0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
         ),
     );
 
     public static $prefixesPsr0 = array (
-        'P' => 
+        'P' =>
         array (
-            'Payplug\\' => 
+            'Payplug\\' =>
             array (
                 0 => __DIR__ . '/..' . '/payplug/payplug-php/lib',
             ),
