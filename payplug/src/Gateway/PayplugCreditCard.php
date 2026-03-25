@@ -7,7 +7,7 @@ use Payplug\PayplugWoocommerce\PayplugWoocommerceHelper;
 
 class PayplugCreditCard extends PayplugGateway {
 
-	public $oneclick = false;
+	public $save_card = false;
 
 	public function __construct() {
 		parent::__construct();
@@ -18,10 +18,12 @@ class PayplugCreditCard extends PayplugGateway {
 		$this->method_title       = _x('PayPlug', 'Gateway method title', 'payplug');
 		$this->method_description = __('Enable PayPlug for your customers.', 'payplug');
 		$this->new_method_label   = __('Pay with another credit card', 'payplug');
-		$this->title              = $this->get_option('title');
-		$this->description        = $this->get_option('description');
-		$this->oneclick       = (('yes' === $this->get_option('oneclick', 'no')) && (is_user_logged_in()));
-		$this->payment_method = $this->get_option('payment_method');
+		$this->title              = $this->get_configuration()->get_option('payment_methods.configuration.payplug.title');
+		$this->description        = $this->get_configuration()->get_option('payment_methods.configuration.payplug.description');
+		$this->save_card       	  = $this->get_configuration()->get_option('payment_methods.configuration.payplug.save_card') && is_user_logged_in();
+		$this->embedded_mode 	  = $this->get_configuration()->get_option('payment_methods.configuration.payplug.embedded_mode');
+
+
 		$this->supports           = array(
 			'products',
 			'refunds',
@@ -36,11 +38,10 @@ class PayplugCreditCard extends PayplugGateway {
 			'subscription_payment_method_change_customer',
 			'subscription_payment_method_change_admin',
 			'multiple_subscriptions',
-
 		);
 
 		// Ensure the description is not empty to correctly display users's save cards
-		if (empty($this->description) && $this->oneclick_available()) {
+		if (empty($this->description) && $this->save_card_available()) {
 			$this->description = ' ';
 		}
 
@@ -51,7 +52,7 @@ class PayplugCreditCard extends PayplugGateway {
 		}
 
 		//add fields of IP to the description
-		if($this->payment_method === 'integrated'){
+		if('integrated' == $this->embedded_mode){
 			$this->has_fields = true;
 		}
 
@@ -62,7 +63,6 @@ class PayplugCreditCard extends PayplugGateway {
 			add_action('woocommerce_scheduled_subscription_payment_' . $this->id,
 				array($this, 'scheduled_subscription_payment'), 10, 2);
 		}
-
 	}
 
 	/**
@@ -71,10 +71,11 @@ class PayplugCreditCard extends PayplugGateway {
 	 */
 	private function handle_cc_enabled(){
 
-		if (!empty($this->settings["enabled"]) && $this->settings["enabled"] === "yes") {
-			$this->enabled = !empty($this->settings[$this->id]) ? $this->settings[$this->id] : $this->settings["enabled"];
+		if (!empty($this->settings['enabled']) && $this->settings['enabled']) {
+			$enabled = !empty($this->settings[$this->id]) ? $this->settings[$this->id] : $this->settings['enabled'];
+			$this->enabled = $enabled ? 'yes' : 'no';
 		} else {
-			$this->enabled = "no";
+			$this->enabled = 'yes';
 		}
 
 		return $this->enabled;
@@ -104,7 +105,6 @@ class PayplugCreditCard extends PayplugGateway {
 		return $icons_str;
 	}
 
-
 	/**
 	 * Embedded payment form scripts.
 	 *
@@ -118,7 +118,7 @@ class PayplugCreditCard extends PayplugGateway {
 		}
 
 		// If PayPlug is not enabled bail.
-		if ('no' === $this->enabled) {
+		if ('no' == $this->enabled) {
 			return;
 		}
 
@@ -133,19 +133,16 @@ class PayplugCreditCard extends PayplugGateway {
 		wp_enqueue_style('payplug-checkout');
 
 		if (
-			( $this->payment_method == "integrated" && !PayplugWoocommerceHelper::is_checkout_block() ) ||
-			($this->payment_method == "integrated" && is_wc_endpoint_url('order-pay') )
+			('integrated' == $this->embedded_mode && !PayplugWoocommerceHelper::is_checkout_block()) ||
+			('integrated' == $this->embedded_mode && is_wc_endpoint_url('order-pay') )
 		) {
 			$this->integrated_payments_scripts();
 		}
 
-		if (($this->payment_method == "popup" ) && ($this->id === "payplug" || $this->id === "american_express") && !PayplugWoocommerceHelper::is_checkout_block() ) {
+		if (('popup' == $this->embedded_mode ) && ('payplug' == $this->id || 'american_express' == $this->id) && !PayplugWoocommerceHelper::is_checkout_block() ) {
 			$this->popup_payments_scripts();
-
 		}
-
 	}
-
 
 	/**
 	 * Integrated payment form scripts.
@@ -204,7 +201,7 @@ class PayplugCreditCard extends PayplugGateway {
 			'nonce'    => [
 				'checkout' => wp_create_nonce('woocommerce-process_checkout'),
 			],
-			'is_embedded' => 'redirect' !== $this->payment_method
+			'is_embedded' => 'redirect' !== $this->embedded_mode
 		]);
 
 		wp_enqueue_script('payplug-checkout');
@@ -221,11 +218,11 @@ class PayplugCreditCard extends PayplugGateway {
 			echo wpautop(wptexturize($description));
 		}
 
-		if(($this->payment_method === 'integrated') ){
-			echo IntegratedPayment::template_form($this->oneclick);
+		if('integrated' == $this->embedded_mode){
+			echo IntegratedPayment::template_form($this->save_card);
 		}
 
-		if ($this->oneclick_available()) {
+		if ($this->save_card_available()) {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 		}
@@ -251,7 +248,7 @@ class PayplugCreditCard extends PayplugGateway {
 		if (!empty($parent_tokens)) {
 			$token = $parent_tokens[0];
 		} else {
-			$token = $this->api->payment_retrieve($payplug_parent_meta['transaction_id'])->card->id;
+			$token = $this->payplug_api->payment_retrieve($payplug_parent_meta['transaction_id'])->card->id;
 		}
 
 		if (!$token) {
@@ -296,7 +293,8 @@ class PayplugCreditCard extends PayplugGateway {
 
 			/** This filter is documented in src/Gateway/PayplugGateway */
 			$payment_data = apply_filters('payplug_gateway_payment_data', $payment_data, $order_id, [], $address_data);
-			$payment      = $this->api->payment_create($payment_data);
+
+			$payment      = $this->payplug_api->payment_create($payment_data);
 
 			// Save transaction id for the order
 			PayplugWoocommerceHelper::is_pre_30()
@@ -309,7 +307,6 @@ class PayplugCreditCard extends PayplugGateway {
 
 			/** This action is documented in src/Gateway/PayplugGateway */
 			\do_action('payplug_gateway_payment_created', $order_id, $payment);
-
 
 			$metadata = PayplugWoocommerceHelper::extract_transaction_metadata($payment);
 			PayplugWoocommerceHelper::save_transaction_metadata($order, $metadata);

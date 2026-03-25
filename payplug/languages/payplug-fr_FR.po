@@ -12,7 +12,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.7\n"
+"X-Generator: Poedit 3.4.2\n"
 
 #: src/Gateway/PayplugGateway.php:383
 msgid " I have integrated the Oney legal notices into the GCSs of my site"
@@ -1020,6 +1020,15 @@ msgstr "La vérification a été réalisée avec succès."
 msgid "payplug_amex_title"
 msgstr "Payer avec Amex"
 
+msgid "payplug_amex_activate"
+msgstr "Activer"
+
+msgid "payplug_amex_description"
+msgstr "Permettez à vos clients de payer avec leur carte American Express. Affichez le bouton de paiement Amex dans votre boutique, lors du paiement."
+
+msgid "payplug_american_express_unauthorized_message"
+msgstr "Vous n'avez pas encore accès à cette fonctionnalité. Pour activer American Express, veuillez remplir le formulaire suivant <a href='https://support.payplug.com/hc/fr/requests/new' target='_blank'>Soumettre une demande - Centre d'aide</a>"
+
 msgid "payplug_save_changes_text"
 msgstr "Mettre à jour les paramètres"
 
@@ -1092,6 +1101,12 @@ msgstr "Payer avec MyBank"
 msgid "pay_with_ideal"
 msgstr "Payer avec iDEAL"
 
+msgid "pay_with_wero"
+msgstr "Payer avec Wero"
+
+msgid "pay_with_bizum"
+msgstr "Payer avec Bizum"
+
 msgid "satispay_threshold"
 msgstr "Le montant total de votre panier doit être compris entre %s€ and %s€ pour payer avec Satispay."
 
@@ -1145,6 +1160,36 @@ msgstr "Vous n'avez pas encore accès à cette fonctionnalité. Pour activer MyB
 
 msgid "payplug_ideal_access_error"
 msgstr "Vous n'avez pas encore accès à cette fonctionnalité. Pour activer iDEAL, rendez-vous sur <a href='https://support.payplug.com/hc/fr/requests/new?ticket_form_id=8248663314844' target='_blank'>ce formulaire</a>"
+
+msgid "payplug_wero_activate"
+msgstr "Paiement Wero"
+
+msgid "payplug_wero_more_url"
+msgstr "https://support.payplug.com/hc/fr/articles/8089119071132"
+
+msgid "payplug_section_wero_payment_description"
+msgstr "Permettez à vos clients de payer via Wero."
+
+msgid "payplug_wero_unavailable_testmode_description"
+msgstr "Wero n’est pas disponible en mode TEST. Pour l’activer, passez votre module Payplug en mode LIVE."
+
+msgid "payplug_wero_access_error"
+msgstr "Vous n'avez pas encore accès à cette fonctionnalité. Pour activer Wero, rendez-vous sur <a href='https://support.payplug.com/hc/fr/requests/new?ticket_form_id=8248663314844' target='_blank'>ce formulaire</a>"
+
+msgid "payplug_bizum_activate"
+msgstr "Paiement Bizum"
+
+msgid "payplug_bizum_more_url"
+msgstr "https://support.payplug.com/hc/fr/articles/8089119071132"
+
+msgid "payplug_section_bizum_payment_description"
+msgstr "Permettez à vos clients de payer via Bizum."
+
+msgid "payplug_bizum_unavailable_testmode_description"
+msgstr "Bizum n’est pas disponible en mode TEST. Pour l’activer, passez votre module Payplug en mode LIVE."
+
+msgid "payplug_bizum_access_error"
+msgstr "Vous n'avez pas encore accès à cette fonctionnalité. Pour activer Bizum, rendez-vous sur <a href='https://support.payplug.com/hc/fr/requests/new?ticket_form_id=8248663314844' target='_blank'>ce formulaire</a>"
 
 msgid "payplug_refund_disabled_error"
 msgstr ""

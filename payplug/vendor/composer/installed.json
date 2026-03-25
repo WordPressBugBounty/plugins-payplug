@@ -156,17 +156,17 @@
         },
         {
             "name": "payplug/payplug-php",
-            "version": "3.7.1",
-            "version_normalized": "3.7.1.0",
+            "version": "4.0.0",
+            "version_normalized": "4.0.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/payplug/payplug-php.git",
-                "reference": "d5e75b2d0545c63eec06c454d5fe9907c2733fd7"
+                "reference": "ad19dee72100668e14c8c4974a6791ca2d1c8482"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/payplug/payplug-php/zipball/d5e75b2d0545c63eec06c454d5fe9907c2733fd7",
-                "reference": "d5e75b2d0545c63eec06c454d5fe9907c2733fd7",
+                "url": "https://api.github.com/repos/payplug/payplug-php/zipball/ad19dee72100668e14c8c4974a6791ca2d1c8482",
+                "reference": "ad19dee72100668e14c8c4974a6791ca2d1c8482",
                 "shasum": ""
             },
             "require": {
@@ -176,7 +176,8 @@
             },
             "require-dev": {
                 "phpdocumentor/phpdocumentor": "2.*",
-                "phpunit/phpunit": "5.7.*"
+                "phpunit/phpunit": "5.7.*",
+                "rector/rector": "^1.2"
             },
             "time": "2015-05-06T00:00:00+00:00",
             "type": "library",
@@ -203,7 +204,7 @@
             "homepage": "https://www.payplug.com",
             "support": {
                 "issues": "https://github.com/payplug/payplug-php/issues",
-                "source": "https://github.com/payplug/payplug-php/tree/3.7.1"
+                "source": "https://github.com/payplug/payplug-php/tree/4.0.0"
             },
             "install-path": "../payplug/payplug-php"
         }

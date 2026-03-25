@@ -29,10 +29,10 @@ class Satispay  extends PayplugGenericGateway
 
 		//WOOCO FIELDS
 		$this->has_fields = false;
-		$this->enabled = "yes";
+		$this->enabled = 'yes';
 
 		if (!$this->checkGateway()) {
-			$this->enabled = "no";
+			$this->enabled = 'no';
 		}
 
 		add_action('woocommerce_order_item_add_action_buttons', [$this, 'refund_not_available']);

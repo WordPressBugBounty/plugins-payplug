@@ -16,7 +16,7 @@ use function is_product;
 class ApplePay extends PayplugGateway
 {
 
-	public $domain_name = "";
+	public $domain_name = '';
 
 	protected $cart = false;
 
@@ -26,7 +26,7 @@ class ApplePay extends PayplugGateway
 
 	const ENABLE_ON_TEST_MODE = false;
 
-	public $image = "apple-pay-checkout.svg";
+	public $image = 'apple-pay-checkout.svg';
 
 	protected $product = false;
 
@@ -40,27 +40,23 @@ class ApplePay extends PayplugGateway
 
 		/** @var \WC_Payment_Gateway overwrite for apple pay settings */
 		$this->method_title = __('payplug_apple_pay_title', 'payplug');
-		$this->method_description = "";
+		$this->method_description = '';
 		$this->has_fields = false;
 
 		$this->title = __('payplug_apple_pay_title', 'payplug');
 		$this->description = '<div id="apple-pay-button-wrapper"><apple-pay-button buttonstyle="black" type="pay" locale="'. get_locale() .'"></apple-pay-button></div>';
 		$this->domain_name = $_SERVER['HTTP_HOST'];
-		$this->enabled = "no";
-
+		$this->enabled = 'no';
 
 		if( $this->checkApplePay() && is_admin()){
-			$this->enabled = "yes";
-
+			$this->enabled = 'yes';
 		}else if( $this->checkApplePay() && $this->isSSL()  ){
 
 			if (!is_admin() && $this->get_button_checkout()) {
 				$this->enabled = 'yes';
 			}
 
-
 			if( !is_admin() ){
-
 				if (!PayplugWoocommerceHelper::is_checkout_block() && $this->get_button_checkout()) {
 					$this->add_apple_pay_css();
 					add_action('wp_enqueue_scripts', [$this, 'add_apple_pay_js']);
@@ -69,13 +65,13 @@ class ApplePay extends PayplugGateway
 				if ( $this->get_button_cart() && !PayplugWoocommerceHelper::is_cart_block() && !PayplugWoocommerceHelper::is_subscription() ) {
 					$this->enabled = 'yes';
 					$this->add_apple_pay_css();
-					add_action('woocommerce_proceed_to_checkout', [$this, "add_apple_pay_cart_js"], 15);
+					add_action('woocommerce_proceed_to_checkout', [$this, 'add_apple_pay_cart_js'], 15);
 				}
 
 				if ($this->get_button_product() && !PayplugWoocommerceHelper::is_product_block()) {
-					$this->enabled ='yes';
+					$this->enabled = 'yes';
 					$this->add_apple_pay_css();
-					add_action('woocommerce_after_add_to_cart_button', [$this, "add_apple_pay_product_js"], 15);
+					add_action('woocommerce_after_add_to_cart_button', [$this, 'add_apple_pay_product_js'], 15);
 				}
 			}
 		}
@@ -91,14 +87,14 @@ class ApplePay extends PayplugGateway
 		$data = $this->get_post_data();
 		if (isset($data['woocommerce_payplug_mode'])) {
 			if ( $this->get_post_data()['woocommerce_payplug_mode'] === '0' ) {
-				$options              = get_option( 'woocommerce_payplug_settings', [] );
-				$options['apple_pay'] = 'no';
-				update_option( 'woocommerce_payplug_settings', apply_filters( 'woocommerce_settings_api_sanitized_fields_payplug', $options ) );
+				$options = $this->get_configuration()->get_options();
+				$options['payment_methods']['configuration']['apple_pay']['active'] = false;
+				$this->get_configuration()->update_options($options);
 			}
 		}
 		if (isset($data['woocommerce_payplug_apple_pay'])) {
 			if (($data['woocommerce_payplug_apple_pay'] == 1) && (!$this->checkApplePay())) {
-				add_action( 'admin_notices', [$this ,"display_notice"] );
+				add_action( 'admin_notices', [$this ,'display_notice'] );
 			}
 		}
 
@@ -114,12 +110,18 @@ class ApplePay extends PayplugGateway
 
 
 		//check if module is enabled
-		if(!empty($options['enabled']) && 'no' === $options['enabled']){
+		if(!isset($options['enabled']) || !$options['enabled']){
+			return false;
+		}
+
+
+		if (!isset($options['payment_methods']) || empty($options['payment_methods']))
+		{
 			return false;
 		}
 
 		//it's disabled
-		if(isset($options['apple_pay']) && $options['apple_pay'] === "no"){
+		if(!(bool) $options['payment_methods']['configuration']['apple_pay']['active']){
 			return false;
 		}
 
@@ -131,25 +133,14 @@ class ApplePay extends PayplugGateway
 			}
 		}
 
-		//support legacy applepay
-		if( !isset($options['applepay_checkout']) && !isset($options['applepay_cart']) && !isset($options['applepay_product']) && isset($options['apple_pay']) && $options['apple_pay'] ==="yes"){
-			$this->set_button_checkout(true);
-		}
+		$display = json_decode($options['payment_methods']['configuration']['apple_pay']['display'], true);
+		$this->set_button_checkout($display['checkout']);
+		$this->set_button_cart($display['cart']);
+		$this->set_button_product($display['product']);
 
-		if(isset($options['applepay_checkout']) && $options['applepay_checkout'] === "yes"){
-			$this->set_button_checkout(true);
-		}
-
-		if(isset($options['applepay_cart']) && $options['applepay_cart'] === "yes"){
-			$this->set_button_cart(true);
-		}
-
-		if(isset($options['applepay_product']) && $options['applepay_product'] === "yes"){
-			$this->set_button_product(true);
-		}
-
-		if(isset($options['applepay_carriers']) ){
-			$this->set_carriers($options['applepay_carriers']);
+		$carriers = json_decode($options['payment_methods']['configuration']['apple_pay']['carriers'], true);
+		if(!empty($carriers)){
+			$this->set_carriers($carriers);
 		}
 
 		$account = PayplugWoocommerceHelper::generic_get_account_data_from_options($this->id);
@@ -161,7 +152,7 @@ class ApplePay extends PayplugGateway
 		//$account has permissions to use apple_pay
 		$auth = isset($account['payment_methods']['apple_pay']['enabled']) && $account['payment_methods']['apple_pay']['enabled'];
 		$domain = parse_url(get_site_url());
-		$auth_domains = in_array($domain["host"], $account['payment_methods']['apple_pay']['allowed_domain_names']);
+		$auth_domains = in_array($domain['host'], $account['payment_methods']['apple_pay']['allowed_domain_names']);
 
 		//lost auth
 		if(!($auth && $auth_domains)){
@@ -234,26 +225,25 @@ class ApplePay extends PayplugGateway
 		if ($product->get_type() != "simple" && $product->get_type() != "variable") {
 			return;
 		}
-
+		$apple_pay_params = [
+			'ajax_url_applepay_get_shippings' => \WC_AJAX::get_endpoint('applepay_get_shippings'),
+			'ajax_url_place_order_with_dummy_data' => \WC_AJAX::get_endpoint('place_order_with_dummy_data'),
+			'ajax_url_update_applepay_order' => \WC_AJAX::get_endpoint('update_applepay_order'),
+			'ajax_url_update_applepay_payment' => \WC_AJAX::get_endpoint('update_applepay_payment'),
+			'ajax_url_applepay_get_order_totals' => \WC_AJAX::get_endpoint('applepay_get_order_totals'),
+			'ajax_url_applepay_cancel_order' => \WC_AJAX::get_endpoint('applepay_cancel_order'),
+			'ajax_url_applepay_empty_cart' => \WC_AJAX::get_endpoint('applepay_empty_cart'),
+			'ajax_url_applepay_add_to_cart' => \WC_AJAX::get_endpoint('applepay_add_to_cart'),
+			'is_product' => is_product(),
+			'is_virtual' => $product->is_virtual(),
+			'cart_shipping' => WC()->cart->get_shipping_total(),
+			'countryCode' => WC()->customer->get_billing_country(),
+			'currencyCode' => get_woocommerce_currency(),
+			'apple_pay_domain' => $_SERVER['HTTP_HOST']
+		];
 		wp_enqueue_script( 'apple-pay-sdk', 'https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js', array(), false, true );
 		wp_enqueue_script('payplug-apple-pay-product', PAYPLUG_GATEWAY_PLUGIN_URL . 'assets/js/payplug-apple-pay-product.js', ['jquery', 'apple-pay-sdk'], PAYPLUG_GATEWAY_VERSION, true);
-		wp_localize_script( 'payplug-apple-pay-product', 'apple_pay_params',
-			array(
-				'ajax_url_applepay_get_shippings' => \WC_AJAX::get_endpoint('applepay_get_shippings'),
-				'ajax_url_place_order_with_dummy_data' => \WC_AJAX::get_endpoint('place_order_with_dummy_data'),
-				'ajax_url_update_applepay_order' => \WC_AJAX::get_endpoint('update_applepay_order'),
-				'ajax_url_update_applepay_payment' => \WC_AJAX::get_endpoint('update_applepay_payment'),
-				'ajax_url_applepay_get_order_totals' => \WC_AJAX::get_endpoint('applepay_get_order_totals'),
-				'ajax_url_applepay_cancel_order' => \WC_AJAX::get_endpoint('applepay_cancel_order'),
-				'ajax_url_applepay_empty_cart' => \WC_AJAX::get_endpoint('applepay_empty_cart'),
-				'ajax_url_applepay_add_to_cart' => \WC_AJAX::get_endpoint('applepay_add_to_cart'),
-				'is_product' => is_product(),
-				'cart_shipping' => WC()->cart->get_shipping_total(),
-				'countryCode' => WC()->customer->get_billing_country(),
-				'currencyCode' => get_woocommerce_currency(),
-				'apple_pay_domain' => $_SERVER['HTTP_HOST']
-			)
-		);
+		wp_localize_script( 'payplug-apple-pay-product', 'apple_pay_params', $apple_pay_params);
 
 		if($this->checkButtonVisibility()){
 			echo $this->get_description();
@@ -269,7 +259,7 @@ class ApplePay extends PayplugGateway
 		$apple_carriers = $this->get_carriers();
 		$allowed = false;
 		$post = $this->get_post_data();
-		$chosen_method = isset($post["shipping_method"][0]) ? $post["shipping_method"][0] : null;
+		$chosen_method = isset($post['shipping_method'][0]) ? $post['shipping_method'][0] : null;
 
 		if( empty($chosen_method) ){
 			$chosen_method = !empty(WC()->session->chosen_shipping_methods[0]) ? WC()->session->chosen_shipping_methods[0] : null;
@@ -424,7 +414,7 @@ class ApplePay extends PayplugGateway
 			$order_id = PayplugWoocommerceHelper::is_pre_30() ? $order->id : $order->get_id();
 
 			try {
-				$payment = $this->api->payment_retrieve($order->get_transaction_id());
+				$payment = $this->payplug_api->payment_retrieve($order->get_transaction_id());
 				if (ob_get_length() > 0) {
 					ob_clean();
 				}
@@ -534,7 +524,7 @@ class ApplePay extends PayplugGateway
 			 * @param PayplugAddressData $address_data
 			 */
 			$payment_data = apply_filters('payplug_gateway_payment_data', $payment_data, $order_id, [], $address_data);
-			$payment      = $this->api->payment_create($payment_data);
+			$payment      = $this->payplug_api->payment_create($payment_data);
 
 			// Save transaction id for the order
 			PayplugWoocommerceHelper::is_pre_30()
@@ -560,7 +550,7 @@ class ApplePay extends PayplugGateway
 
 			return [
 				'result'   => 'success',
-				'merchant_session' => $payment->payment_method["merchant_session"],
+				'merchant_session' => $payment->payment_method['merchant_session'],
 				'payment_id' => $payment->id,
 				'cancel_url' => esc_url_raw($order->get_cancel_order_url_raw()),
 				'return_url' => $return_url,
@@ -568,14 +558,22 @@ class ApplePay extends PayplugGateway
 
 		} catch (HttpException $e) {
 			PayplugGateway::log(sprintf('Error while processing order #%s : %s', $order_id, wc_print_r($e->getErrorObject(), true)), 'error');
-			if($workflow === "cart"){
-				wp_send_json_error(["code" => $e->getCode(), "msg" => __('Payment processing failed. Please retry.', 'payplug'), "order_id" => $order_id ]);
+			if($workflow === 'cart'){
+				wp_send_json_error([
+					'code' => $e->getCode(),
+					'msg' => __('Payment processing failed. Please retry.', 'payplug'),
+					'order_id' => $order_id
+				]);
 			}
 			throw new \Exception(__('Payment processing failed. Please retry.', 'payplug'));
 		} catch (\Exception $e) {
 			PayplugGateway::log(sprintf('Error while processing order #%s : %s', $order_id, $e->getMessage()), 'error');
 			if($workflow === "cart"){
-				wp_send_json_error(["code" => $e->getCode(), "msg" => __('Payment processing failed. Please retry.', 'payplug'), "order_id" => $order_id ]);
+				wp_send_json_error([
+					'code' => $e->getCode(),
+					'msg' => __('Payment processing failed. Please retry.', 'payplug'),
+					'order_id' => $order_id
+				]);
 			}
 			throw new \Exception(__('Payment processing failed. Please retry.', 'payplug'));
 		}

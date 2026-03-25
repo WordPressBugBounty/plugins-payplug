@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
+class ComposerStaticInitfaabd806cdfefdceebedb45f99cdcab5
 {
     public static $prefixLengthsPsr4 = array (
         'l' =>
@@ -213,11 +213,13 @@ class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
         'Payplug\\PayplugWoocommerce\\Front\\PayplugOney\\OneySimulation' => __DIR__ . '/../..' . '/src/Front/PayplugOney/OneySimulation.php',
         'Payplug\\PayplugWoocommerce\\Front\\PayplugOney\\Requests\\OneyAnimation' => __DIR__ . '/../..' . '/src/Front/PayplugOney/Requests/OneyAnimation.php',
         'Payplug\\PayplugWoocommerce\\Front\\PayplugOney\\Requests\\OneyBase' => __DIR__ . '/../..' . '/src/Front/PayplugOney/Requests/OneyBase.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\AccountGateway' => __DIR__ . '/../..' . '/src/Gateway/AccountGateway.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\AmericanExpress' => __DIR__ . '/../..' . '/src/Gateway/AmericanExpress.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Bancontact' => __DIR__ . '/../..' . '/src/Gateway/Bancontact.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugAmex' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugAmex.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugApplePay' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugApplePay.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugBancontact' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugBancontact.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugBizum' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugBizum.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugCreditCard' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugCreditCard.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugGenericBlock' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugGenericBlock.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugIdeal' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugIdeal.php',
@@ -228,9 +230,12 @@ class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugOney4x' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugOney4x.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugOney4xWithoutFees' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugOney4xWithoutFees.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugSatispay' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugSatispay.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\Blocks\\PayplugWero' => __DIR__ . '/../..' . '/src/Gateway/Blocks/PayplugWero.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Bizum' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Bizum.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Ideal' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Ideal.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Mybank' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Mybank.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Satispay' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Satispay.php',
+        'Payplug\\PayplugWoocommerce\\Gateway\\PPRO\\Wero' => __DIR__ . '/../..' . '/src/Gateway/PPRO/Wero.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugAddressData' => __DIR__ . '/../..' . '/src/Gateway/PayplugAddressData.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugApi' => __DIR__ . '/../..' . '/src/Gateway/PayplugApi.php',
         'Payplug\\PayplugWoocommerce\\Gateway\\PayplugCreditCard' => __DIR__ . '/../..' . '/src/Gateway/PayplugCreditCard.php',
@@ -249,6 +254,12 @@ class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerce' => __DIR__ . '/../..' . '/src/PayplugWoocommerce.php',
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerceHelper' => __DIR__ . '/../..' . '/src/PayplugWoocommerceHelper.php',
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerceRequest' => __DIR__ . '/../..' . '/src/PayplugWoocommerceRequest.php',
+        'Payplug\\PayplugWoocommerce\\Service\\Api' => __DIR__ . '/../..' . '/src/Service/Api.php',
+        'Payplug\\PayplugWoocommerce\\Service\\Configuration' => __DIR__ . '/../..' . '/src/Service/Configuration.php',
+        'Payplug\\PayplugWoocommerce\\Service\\Upgrade' => __DIR__ . '/../..' . '/src/Service/Upgrade.php',
+        'Payplug\\PayplugWoocommerce\\Traits\\AdapterGetter' => __DIR__ . '/../..' . '/src/Traits/AdapterGetter.php',
+        'Payplug\\PayplugWoocommerce\\Traits\\GatewayGetter' => __DIR__ . '/../..' . '/src/Traits/GatewayGetter.php',
+        'Payplug\\PayplugWoocommerce\\Traits\\ServiceGetter' => __DIR__ . '/../..' . '/src/Traits/ServiceGetter.php',
         'Payplug\\PluginTelemetry' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/PluginTelemetry.php',
         'Payplug\\Refund' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Refund.php',
         'Payplug\\Resource\\APIResource' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Resource/APIResource.php',
@@ -293,10 +304,10 @@ class ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitea7f42cb7e4cd52c6d93f7e59dda26be::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitfaabd806cdfefdceebedb45f99cdcab5::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitfaabd806cdfefdceebedb45f99cdcab5::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitfaabd806cdfefdceebedb45f99cdcab5::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitfaabd806cdfefdceebedb45f99cdcab5::$classMap;
 
         }, null, ClassLoader::class);
     }

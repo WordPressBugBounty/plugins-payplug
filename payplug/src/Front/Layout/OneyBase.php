@@ -10,7 +10,6 @@ Abstract Class OneyBase implements InterfaceOneyResources
 		add_action( 'wp_enqueue_scripts', [self::addOneyCSS() ]);
 		add_action( 'wp_enqueue_scripts', [self::addOneyJs() ]);
 		add_action( 'wp_enqueue_scripts', [self::addOneyScript()]);
-
 	}
 
 	/**

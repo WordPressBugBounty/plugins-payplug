@@ -50,14 +50,12 @@ class PayplugGatewayOney3x extends PayplugGenericGateway
 				$this->enabled = 'no';
 			}
 		}
-
 	}
 
 	public function validate_checkout(){
-
 		$posted_data = $this->get_post_data();
 
-		if( in_array($posted_data['payment_method'], ["oney_x3_with_fees","oney_x4_with_fees", "oney_x3_without_fees", "oney_x4_without_fees"] ) ){
+		if( in_array($posted_data['payment_method'], ['oney_x3_with_fees","oney_x4_with_fees", "oney_x3_without_fees", "oney_x4_without_fees'] ) ){
 			if ($this->check_oney_is_available() === self::ONEY_UNAVAILABLE_CODE_COUNTRY_NOT_ALLOWED) {
 				throw new \Exception(__('Unavailable for the specified country.'));
 
@@ -93,11 +91,10 @@ class PayplugGatewayOney3x extends PayplugGenericGateway
      */
     public function get_icon()
     {
-
 		$disable='';
         if ($this->check_oney_is_available() === true) {
             $total_price = floatval(WC()->cart->total);
-            $this->oney_response = $this->api->simulate_oney_payment($total_price, 'with_fees');
+            $this->oney_response = $this->payplug_api->simulate_oney_payment($total_price, 'with_fees');
             $currency = get_woocommerce_currency_symbol(get_option('woocommerce_currency'));
 	        $total_price_oney = floatval($this->oney_response['x3_with_fees']['down_payment_amount']);
 			foreach ($this->oney_response['x3_with_fees']['installments'] as $installment) {
@@ -190,9 +187,14 @@ HTML;
         $total_price = floatval($cart->total);
 		$products_qty = (int) $cart->cart_contents_count;
 
+		$oney_cfg = $this->get_configuration()->get_option('payment_methods.configuration.oney');
+		$oney_amount = json_decode($oney_cfg['custom_amounts'], true);
+		$oney_amount['min'] = (float) $oney_amount['min'] / 100;
+		$oney_amount['max'] = (float) $oney_amount['max'] / 100;
+
 		// Min and max
-        if ($total_price < $this->oney_thresholds_min || $total_price > $this->oney_thresholds_max) {
-            $this->description = '<div class="payment_method_oney_x3_with_fees_disabled">'.sprintf(__('The total amount of your order should be between %s€ and %s€ to pay with Oney.', 'payplug'), $this->oney_thresholds_min , $this->oney_thresholds_max ).'</div>';
+        if ($total_price < $oney_amount['min'] || $total_price > $oney_amount['max']) {
+            $this->description = '<div class="payment_method_oney_x3_with_fees_disabled">'.sprintf(__('The total amount of your order should be between %s€ and %s€ to pay with Oney.', 'payplug'), $oney_amount['min'] , $oney_amount['max'] ).'</div>';
             return false;
         }
 
@@ -342,7 +344,7 @@ HTML;
              * @param PayplugAddressData $address_data
              */
             $payment_data = apply_filters('payplug_gateway_payment_data', $payment_data, $order_id, [], $address_data);
-            $payment      = $this->api->payment_create($payment_data);
+            $payment      = $this->payplug_api->payment_create($payment_data);
 
             // Save transaction id for the order
             PayplugWoocommerceHelper::is_pre_30()
@@ -380,7 +382,6 @@ HTML;
         }
     }
 
-
     /**
      * Check if the gatteway is allowed for the order amount
      *
@@ -390,7 +391,6 @@ HTML;
     public function check_gateway($gateways)
     {
         if (isset($gateways[$this->id]) && $gateways[$this->id]->id == $this->id) {
-
 	        //remove gateway if thresholds/country criteria are not met
 	        if( $this->check_oney_is_available() === false){
 		        unset($gateways[$this->id]);
@@ -404,6 +404,7 @@ HTML;
 				$gateways = parent::check_gateway($gateways);
             }
         }
+
         return $gateways;
     }
 
@@ -418,7 +419,7 @@ HTML;
             $order_metadata = $order->get_meta('_payplug_metadata');
 
 			if ( is_array($order_metadata) && !empty($order_metadata['transaction_id']) ){
-	            $payment  = $this->api->payment_retrieve($order_metadata['transaction_id']);
+	            $payment  = $this->payplug_api->payment_retrieve($order_metadata['transaction_id']);
     	        $today = current_time('Y-m-d H:i:s');
         	    $can_refund_date = date('Y-m-d H:i:s', $payment->__get('refundable_after'));
 				if ($can_refund_date >= $today) {
@@ -484,15 +485,8 @@ HTML;
 	}
 
 	public function checkGateway() {
-
 		$options = PayplugWoocommerceHelper::get_payplug_options();
-
-		if (empty($options) || !isset($options['oney'] ) || $options['oney'] === 'no') {
-			return false;
-		}
-
-		return true;
-
+		return empty($options) || !isset($options['payment_methods']) ? false : $options['payment_methods']['configuration']['oney']['active'];
 	}
 
 }
