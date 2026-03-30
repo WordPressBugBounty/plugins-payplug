@@ -1488,9 +1488,9 @@ module.exports = window["wp"]["i18n"];
 var __webpack_exports__ = {};
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
 (() => {
-/*!*********************************************************!*\
-  !*** ./resources/js/frontend/wc-payplug-wero-blocks.js ***!
-  \*********************************************************/
+/*!*************************************************************!*\
+  !*** ./resources/js/frontend/wc-payplug-scalapay-blocks.js ***!
+  \*************************************************************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
 /* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__);
@@ -1506,10 +1506,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const settings = (0,_woocommerce_settings__WEBPACK_IMPORTED_MODULE_3__.getSetting)('wero_data', {});
+const settings = (0,_woocommerce_settings__WEBPACK_IMPORTED_MODULE_3__.getSetting)('scalapay_data', {});
 const defaultLabel = (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Gateway method title', 'payplug');
 const label = (0,_wordpress_html_entities__WEBPACK_IMPORTED_MODULE_2__.decodeEntities)(settings?.title) || defaultLabel;
-const allowed_country_codes = settings?.allowed_country_codes;
 
 /**
  * Content component
@@ -1543,18 +1542,12 @@ const Icon = () => {
 /**
  * Payplug payment method config object.
  */
-const Wero = {
-  name: "wero",
+const Scalapay = {
+  name: "scalapay",
   label: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Label, {}),
   content: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Content, {}),
   edit: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)(Content, {}),
-  canMakePayment: data => {
-    if (allowed_country_codes.includes(data.billingData.country)) {
-      return true;
-    } else {
-      return false;
-    }
-  },
+  canMakePayment: () => true,
   ariaLabel: label,
   supports: {
     features: settings.supports
@@ -1562,9 +1555,9 @@ const Wero = {
 };
 
 // Register the defined payment method object
-(0,_woocommerce_blocks_registry__WEBPACK_IMPORTED_MODULE_1__.registerPaymentMethod)(Wero);
+(0,_woocommerce_blocks_registry__WEBPACK_IMPORTED_MODULE_1__.registerPaymentMethod)(Scalapay);
 })();
 
 /******/ })()
 ;
-//# sourceMappingURL=wc-payplug-wero-blocks.js.map
+//# sourceMappingURL=wc-payplug-scalapay-blocks.js.map

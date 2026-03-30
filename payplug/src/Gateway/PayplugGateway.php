@@ -151,7 +151,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
 			'tokenization',
 		);
 
-		$payplug_gateways = array('payplug', 'american_express', 'apple_pay', 'bancontact', 'oney_x3_with_fees', 'oney_x3_without_fees', 'oney_x4_with_fees', 'oney_x4_without_fees', 'satispay', 'ideal', 'mybank', 'wero', 'bizum');
+		$payplug_gateways = array('payplug', 'american_express', 'apple_pay', 'bancontact', 'oney_x3_with_fees', 'oney_x3_without_fees', 'oney_x4_with_fees', 'oney_x4_without_fees', 'satispay', 'ideal', 'mybank', 'wero', 'bizum', 'scalapay');
 
 		//save buttom admin
 		if ((!empty($_GET['section'])) && (in_array($_GET['section'], $payplug_gateways))) {
@@ -282,7 +282,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
 		}
 
 		$payment_method = PayplugWoocommerceHelper::is_pre_30() ? $order->payment_method : $order->get_payment_method();
-		if (!in_array($payment_method, ['payplug', 'oney_x3_with_fees', 'oney_x4_with_fees', 'oney_x3_without_fees', 'oney_x4_without_fees', 'bancontact', 'apple_pay', 'american_express', 'satispay', 'mybank', 'ideal','wero','bizum'])) {
+		if (!in_array($payment_method, ['payplug', 'oney_x3_with_fees', 'oney_x4_with_fees', 'oney_x3_without_fees', 'oney_x4_without_fees', 'bancontact', 'apple_pay', 'american_express', 'satispay', 'mybank', 'ideal','wero','bizum','scalapay'])) {
 			return;
 		}
 
@@ -1288,8 +1288,11 @@ class PayplugGateway extends WC_Payment_Gateway_CC
 	{
 		if (!empty(WC()->cart) && isset($gateways[$this->id]) && $gateways[$this->id]->id == $this->id) {
 			$order_amount = $this->get_order_total();
-			if ($order_amount < self::MIN_AMOUNT || $order_amount > self::MAX_AMOUNT) {
-				unset($gateways[$this->id]);
+			foreach ($gateways[$this->id]->settings['payment_methods']['permissions'] as $key => &$permission) {
+				$method_amounts = json_decode($permission['amounts'], true);
+				if ($order_amount < $method_amounts['min']['EUR']/100 || $order_amount > $method_amounts['max']['EUR']/100) {
+					unset($gateways[$key]);
+				}
 			}
 		}
 
