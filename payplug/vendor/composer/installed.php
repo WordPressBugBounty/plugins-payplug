@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'payplug/payplug-woocommerce',
-        'pretty_version' => '2.17.1',
-        'version' => '2.17.1.0',
+        'pretty_version' => '2.17.3',
+        'version' => '2.17.3.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'payplug/payplug-woocommerce' => array(
-            'pretty_version' => '2.17.1',
-            'version' => '2.17.1.0',
+            'pretty_version' => '2.17.3',
+            'version' => '2.17.3.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
