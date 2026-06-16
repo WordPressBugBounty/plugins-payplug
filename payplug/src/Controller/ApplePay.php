@@ -43,7 +43,7 @@ class ApplePay extends PayplugGateway
 
         $this->title = __('payplug_apple_pay_title', 'payplug');
         $this->description = '<div id="apple-pay-button-wrapper"><apple-pay-button buttonstyle="black" type="pay" locale="' . get_locale() . '"></apple-pay-button></div>';
-        $this->domain_name = $_SERVER['HTTP_HOST'];
+        $this->domain_name = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : parse_url(home_url(), PHP_URL_HOST);
         $this->enabled = 'no';
 
         if ($this->checkApplePay() && is_admin()) {
@@ -200,9 +200,11 @@ class ApplePay extends PayplugGateway
                 'ajax_url_applepay_get_order_totals' => \WC_AJAX::get_endpoint('applepay_get_order_totals'),
                 'ajax_url_applepay_cancel_order' => \WC_AJAX::get_endpoint('applepay_cancel_order'),
                 'is_cart' => is_cart(),
+                'is_virtual' => !$this->is_shipping_required(),
+                'cart_shipping' => WC()->cart->get_shipping_total(),
                 'countryCode' => WC()->customer->get_billing_country(),
                 'currencyCode' => get_woocommerce_currency(),
-                'apple_pay_domain' => $_SERVER['HTTP_HOST'],
+                'apple_pay_domain' => $this->domain_name,
             ]
         );
 
