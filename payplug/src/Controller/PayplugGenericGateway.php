@@ -2,7 +2,6 @@
 
 namespace Payplug\PayplugWoocommerce\Controller;
 
-use Automattic\WooCommerce\Utilities\OrderUtil;
 use Payplug\Exception\HttpException;
 use Payplug\Payplug;
 use Payplug\PayplugWoocommerce\Gateway\PayplugAddressData;
@@ -27,7 +26,7 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
     public function __construct()
     {
         parent::__construct();
-        add_action('woocommerce_after_order_itemmeta', [$this, 'hide_wc_refund_button']);
+        add_action('woocommerce_after_order_itemmeta', [$this, 'hide_wc_refund_button'], 10, 3);
     }
 
     /**
@@ -54,7 +53,7 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
     /**
      * @return void
      */
-    public function display_notice()
+    public function display_notice(): void
     {
         $error_message = 'payplug_' . $this->id . '_unauthorized_message'; ?>
 		<div class="notice notice-error is-dismissible">
@@ -86,8 +85,10 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
             return false;
         }
 
-        if (!is_admin() && !PayplugWoocommerceHelper::is_checkout_block()) {
-            if (empty(WC()->cart) && !is_admin()) {
+        $is_order_pay = is_wc_endpoint_url('order-pay');
+        $country_code_billing = null;
+        if (!is_admin() && (!PayplugWoocommerceHelper::is_checkout_block() || $is_order_pay)) {
+            if (empty(WC()->cart) && !is_admin() && !$is_order_pay) {
                 return false;
             }
 
@@ -95,17 +96,26 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
             if (!empty(get_query_var('order-pay'))) {
                 $order = wc_get_order((int) get_query_var('order-pay'));
                 $items = $order->get_items();
-                $country_code_shipping = $order->get_shipping_country();
                 $country_code_billing = $order->get_billing_country();
-                $this->order_items_to_cart(WC()->cart, $items);
+                // Skip cart population for subscription renewals: WC Subscriptions manages the cart
+                // itself and adding items here would cause a double entry in the order summary.
+                $is_renewal = function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order);
+                if (!$is_renewal) {
+                    if (is_null(WC()->cart)) {
+                        wc_load_cart();
+                    }
+                    $this->order_items_to_cart(WC()->cart, $items);
+                }
             }
 
-            if (empty($country_code_billing) || empty($country_code_shipping)) {
-                $country_code_shipping = method_exists(WC()->customer, 'get_shipping_country') ? WC()->customer->get_shipping_country() : null;
+            $source_before_fallback = $country_code_billing;
+            if (empty($country_code_billing)) {
                 $country_code_billing = method_exists(WC()->customer, 'get_billing_country') ? WC()->customer->get_billing_country() : null;
             }
 
-            if (!$this->check_billing_country_permissions($account, $country_code_billing)) {
+            $permission_result = $this->check_billing_country_permissions($account, $country_code_billing);
+
+            if (!$permission_result) {
                 return false;
             }
         }
@@ -143,7 +153,11 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
      */
     public function check_billing_country_permissions($account, $billing_code)
     {
-        $this->allowed_country_codes = !empty($account['payment_methods'][$this->id]['allowed_countries']) ? $account['payment_methods'][$this->id]['allowed_countries'] : null;
+        if (!isset($account['payment_methods'][$this->id]['allowed_countries'])) {
+            return true;
+        }
+
+        $this->allowed_country_codes = $account['payment_methods'][$this->id]['allowed_countries'];
 
         if (is_array($this->allowed_country_codes)) {
             if (in_array('ALL', $this->allowed_country_codes) || empty($this->allowed_country_codes)) {
@@ -158,7 +172,7 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
             }
         }
 
-        return true;
+        return false;
     }
 
     /**
@@ -173,7 +187,13 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
     private function process_standard_intent_payment($order)
     {
         $embedded_mode = $this->settings['payment_methods']['configuration']['payplug']['embedded_mode'];
-        if (!is_wc_endpoint_url('order-pay') &&
+
+        // This can run from AJAX endpoints whose own request URL never carries the order-pay
+        // query var, so is_wc_endpoint_url() alone can't detect that context here: fall back
+        // to the order_key/order_pay_key sent by the order-pay AJAX flows.
+        $is_order_pay = $this->is_order_pay_request($order);
+
+        if (!$is_order_pay &&
             empty($_POST['payplug_non_blocks']) &&
             PayplugWoocommerceHelper::is_checkout_block() &&
             (
@@ -213,16 +233,22 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
 
                 $return_url = esc_url_raw($order->get_checkout_order_received_url());
 
-                wp_send_json_success(
-                    [
-                        'payment_id' => $payment->id,
-                        'result' => 'success',
-                        'redirect' => !empty($payment->hosted_payment->payment_url) ? $payment->hosted_payment->payment_url : $return_url,
-                        'cancel' => !empty($payment->hosted_payment->cancel_url) ? $payment->hosted_payment->cancel_url : null,
-                    ]
-                );
+                $result = [
+                    'payment_id' => $payment->id,
+                    'result' => 'success',
+                    'redirect' => !empty($payment->hosted_payment->payment_url) ? $payment->hosted_payment->payment_url : $return_url,
+                    'cancel' => !empty($payment->hosted_payment->cancel_url) ? $payment->hosted_payment->cancel_url : null,
+                ];
 
-                return ['stt' => 'OK'];
+                // wp_send_json_success() calls die(), which is only safe for the classic
+                // wc-ajax request this was written for: the Store API checkout flow (used by
+                // the checkout block) calls process_payment() through the REST framework,
+                // and killing the process mid-request there produces a broken response.
+                if (wp_doing_ajax()) {
+                    wp_send_json_success($result);
+                }
+
+                return $result;
             } catch (HttpException $e) {
                 PayplugGateway::log(sprintf('Error while processing order #%s : %s', $order_id, wc_print_r($e->getErrorObject(), true)), 'error');
                 throw new \Exception(__('Payment processing failed. Please retry.', 'payplug'));
@@ -378,7 +404,6 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
          * PPRO gateways feature!
          */
         if (isset($this->enable_refund) && $this->enable_refund === false) {
-            add_action('admin_head', [$this, 'hide_wc_refund_button']);
             PayplugGateway::log(__('payplug_refund_disabled_error', 'payplug'), 'error');
 
             return new \WP_Error('process_refund_error', __('payplug_refund_disabled_error', 'payplug'));
@@ -466,32 +491,24 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
     /**
      * Avoid usage of button refund on the BO
      *
+     * @param int $item_id
+     * @param \WC_Order_Item|null $item
+     * @param mixed $product
+     *
      * @return false|void
      */
-    public function hide_wc_refund_button()
+    public function hide_wc_refund_button($item_id, $item = null, $product = null)
     {
-        global $post;
-
-        $payment_methods = [];
-
-        if (class_exists('OrderUtil') && OrderUtil::custom_orders_table_usage_is_enabled()) {
-            $order_id = !empty($_GET['id']) ? $_GET['id'] : null;
-        } else {
-            if (!empty($post->ID)) {
-                $order_id = $post->ID;
-            } elseif (!empty($_GET['id'])) {
-                $order_id = $_GET['id'];
-            } else {
-                $order_id = null;
-            }
-        }
-
-        if (empty($order_id)) {
+        if (!$item instanceof \WC_Order_Item) {
             return false;
         }
 
-        $order = new \WC_Order($order_id);
-        if (in_array($order->get_payment_method(), $payment_methods)) {
+        $order = $item->get_order();
+        if (!$order instanceof \WC_Order) {
+            return false;
+        }
+
+        if ($order->get_payment_method() === $this->id && isset($this->enable_refund) && $this->enable_refund === false) {
             ?>
 			<script>
 				jQuery(function () {
@@ -507,7 +524,7 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
      *
      * @return void
      */
-    public function refund_not_available($order)
+    public function refund_not_available($order): void
     {
         if ($this->id === $order->get_payment_method() && isset($this->enable_refund) && $this->enable_refund === false) {
             echo "<p style='color: red;'>" . __('payplug_refund_disabled_error', 'payplug') . '</p>';
@@ -522,7 +539,7 @@ class PayplugGenericGateway extends PayplugGateway implements PayplugGatewayBuil
      *
      * @return void
      */
-    private function order_items_to_cart($cart, $items)
+    private function order_items_to_cart($cart, $items): void
     {
         $cart->empty_cart();
         foreach ($items as $item) {

@@ -4,6 +4,7 @@ namespace Payplug\PayplugWoocommerce;
 
 // Exit if accessed directly
 use Automattic\WooCommerce\Utilities\OrderUtil;
+use Payplug\Exception\HttpException;
 use Payplug\PayplugWoocommerce\Gateway\PayplugAddressData;
 use Payplug\PayplugWoocommerce\Gateway\PayplugGateway;
 use Payplug\PayplugWoocommerce\Traits\ServiceGetter;
@@ -52,6 +53,7 @@ class PayplugWoocommerceRequest
         add_action('wc_ajax_applepay_update_payment', [$this, 'applepay_update_payment']);
         add_action('wc_ajax_applepay_get_order_totals', [$this, 'applepay_get_order_totals']);
         add_action('wc_ajax_payplug_order_review_url', [$this, 'ajax_create_payment']);
+        add_action('wc_ajax_payplug_apple_pay_create_order_pay', [$this, 'ajax_apple_pay_create_order_pay']);
         add_action('wc_ajax_payplug_check_payment', [$this, 'check_payment']);
         add_action('wc_ajax_payplug_create_intent', [$this, 'create_payment_intent']);
     }
@@ -60,7 +62,7 @@ class PayplugWoocommerceRequest
      * Sets the WC customer session if one is not set.
      * This is needed so nonces can be verified by AJAX Request.
      */
-    public function set_session()
+    public function set_session(): void
     {
         if (!is_product() || (isset(WC()->session) && WC()->session->has_session())) {
             return;
@@ -79,7 +81,7 @@ class PayplugWoocommerceRequest
     /**
      * Create the woocommerce order in the BO
      */
-    public function ajax_create_order()
+    public function ajax_create_order(): void
     {
         if (WC()->cart->is_empty()) {
             wp_send_json_error(__('Empty cart', 'payplug'));
@@ -95,13 +97,98 @@ class PayplugWoocommerceRequest
     }
 
     /**
+     * Process Apple Pay payment for an existing order on the order-pay page.
+     */
+    public function ajax_apple_pay_create_order_pay(): void
+    {
+        if (!check_ajax_referer('woocommerce-process_checkout', 'woocommerce-process-checkout-nonce', false)) {
+            wp_send_json([
+                'result' => 'failure',
+                'messages' => '<ul class="woocommerce-error"><li>' . __('Invalid order.', 'payplug') . '</li></ul>',
+            ]);
+
+            return;
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+        $order_key = isset($_POST['order_key']) ? wc_clean(wp_unslash($_POST['order_key'])) : '';
+
+        $order = $order_id ? wc_get_order($order_id) : null;
+        if (!$order || !hash_equals($order->get_order_key(), $order_key)) {
+            wp_send_json([
+                'result' => 'failure',
+                'messages' => '<ul class="woocommerce-error"><li>' . __('Invalid order.', 'payplug') . '</li></ul>',
+            ]);
+
+            return;
+        }
+
+        // This AJAX request's own URL never carries the order-pay query var (only the page
+        // that triggered it does), but WC_Payment_Gateway::get_order_total() - used by this
+        // plugin's own check_gateway() filter on woocommerce_available_payment_gateways to
+        // enforce per-method amount permissions - reads that query var to know whether to use
+        // the order's total or the (here empty, on order-pay) cart's. Left unset, it falls
+        // back to a cart total of 0, which the amount-permission check then rejects, making
+        // Apple Pay appear unavailable below. Setting it restores the normal, fully validated
+        // availability check (API key, requirements, amount permissions, etc.).
+        global $wp_query;
+        $wp_query->set('order-pay', $order_id);
+
+        $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+        if (!isset($available_gateways['apple_pay'])) {
+            wp_send_json([
+                'result' => 'failure',
+                'messages' => '<ul class="woocommerce-error"><li>' . __('Apple Pay not available.', 'payplug') . '</li></ul>',
+            ]);
+
+            return;
+        }
+
+        try {
+            $result = $available_gateways['apple_pay']->process_payment($order_id);
+            wp_send_json($result);
+        } catch (\Exception $e) {
+            wp_send_json([
+                'result' => 'failure',
+                'messages' => '<ul class="woocommerce-error"><li>' . esc_html($e->getMessage()) . '</li></ul>',
+            ]);
+        }
+    }
+
+    /**
      * Create the woocommerce order in the BO
      */
-    public function ajax_create_payment()
+    public function ajax_create_payment(): void
     {
         global $wp;
 
-        if (WC()->cart->is_empty()) {
+        $https_referer = wc_clean(wp_unslash($_POST['_wp_http_referer'] ?? ''));
+        $path = wp_parse_url($https_referer) ?: [];
+        $output = [];
+        if (!empty($path['query'])) {
+            wp_parse_str($path['query'], $output);
+        }
+
+        if (isset($output['order-pay'])) {
+            $order_id = absint($output['order-pay']);
+        } else {
+            preg_match('/(?<=order-pay\/)\d*/', $path['path'] ?? '', $matches);
+            $order_id = !empty($matches[0]) ? absint($matches[0]) : 0;
+        }
+
+        // The referer is client-supplied and can be spoofed: only trust it as an order-pay
+        // request once the order it names is confirmed real and the key matches, exactly
+        // like the order-pay AJAX flows below already require (create_payment_intent,
+        // ajax_apple_pay_create_order_pay). Otherwise fall through as a regular checkout.
+        $order = $order_id ? wc_get_order($order_id) : false;
+        if (!$order instanceof \WC_Order || !hash_equals($order->get_order_key(), wc_clean(wp_unslash($output['key'] ?? '')))) {
+            $order_id = 0;
+        }
+
+        // Order-pay repays an existing order, whose line items live on the order itself,
+        // not the session cart - which is legitimately empty here (the customer already
+        // completed checkout for it), so only require a non-empty cart on a fresh checkout.
+        if (empty($order_id) && WC()->cart->is_empty()) {
             wp_send_json_error(__('Empty cart', 'payplug'));
         }
 
@@ -120,17 +207,6 @@ class PayplugWoocommerceRequest
             $this->ajax_create_order();
         }
 
-        $https_referer = $_POST['_wp_http_referer'];
-        $path = parse_url($https_referer);
-        wp_parse_str($path['query'], $output);
-
-        if (isset($output['order-pay'])) {
-            $order_id = $output['order-pay'];
-        } else {
-            preg_match('/(?<=order-pay\/)\d*/', $path['path'], $matches);
-            $order_id = $matches[0];
-        }
-
         $this->process_order_payment($order_id, $payment_method);
     }
 
@@ -145,8 +221,19 @@ class PayplugWoocommerceRequest
      * @param int $order_id Order ID.
      * @param string $payment_method Payment method.
      */
-    protected function process_order_payment($order_id, $payment_method)
+    protected function process_order_payment($order_id, $payment_method): void
     {
+        // This AJAX request's own URL never carries the order-pay query var (only the page
+        // that triggered it does), but WC_Payment_Gateway::get_order_total() - used by this
+        // plugin's own check_gateway() filter on woocommerce_available_payment_gateways to
+        // enforce per-method amount permissions - reads that query var to know whether to use
+        // the order's total or the (here empty, on order-pay) cart's. Left unset, it falls
+        // back to a cart total of 0, which the amount-permission check then rejects, making
+        // every gateway appear unavailable below. Setting it restores the normal, fully
+        // validated availability check (API key, requirements, amount permissions, etc.).
+        global $wp_query;
+        $wp_query->set('order-pay', $order_id);
+
         $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
 
         if (!isset($available_gateways[$payment_method])) {
@@ -178,7 +265,7 @@ class PayplugWoocommerceRequest
     /**
      * Update Payplug API Payment for Apple Pay
      */
-    public function applepay_update_payment()
+    public function applepay_update_payment(): void
     {
         $payment_id = $_POST['payment_id'];
         $apiService = new \Payplug\PayplugWoocommerce\Service\Api();
@@ -223,7 +310,7 @@ class PayplugWoocommerceRequest
         wp_send_json_success(['result' => $update->is_paid]);
     }
 
-    public function applepay_get_order_totals()
+    public function applepay_get_order_totals(): void
     {
         try {
             wp_send_json_success(WC()->cart->total);
@@ -236,7 +323,7 @@ class PayplugWoocommerceRequest
     /**
      * Empty cart for Apple Pay on product page
      */
-    public function applepay_empty_cart()
+    public function applepay_empty_cart(): void
     {
         try {
             WC()->cart->empty_cart();
@@ -251,7 +338,7 @@ class PayplugWoocommerceRequest
     /**
      * Add the product on the current page to the cart for Apple Pay on product page
      */
-    public function applepay_add_to_cart()
+    public function applepay_add_to_cart(): void
     {
         try {
             if (!empty($_POST['product_id'])) {
@@ -286,7 +373,7 @@ class PayplugWoocommerceRequest
         return (strlen($value) > $maxlength) ? substr($value, 0, $maxlength) : $value;
     }
 
-    public function check_payment()
+    public function check_payment(): void
     {
         global $wpdb;
         $payment_id = $_POST['payment_id'];
@@ -431,11 +518,42 @@ class PayplugWoocommerceRequest
         return $order_id;
     }
 
-    public function create_payment_intent()
+    public function create_payment_intent(): void
     {
-        $order_id = $_POST['order_id'];
-        $this->gateway = $this->get_payplug_gateway($_POST['gateway']);
+        if (!check_ajax_referer('woocommerce-process_checkout', 'woocommerce-process-checkout-nonce', false)) {
+            wp_send_json_error(__('Invalid order.', 'payplug'), 403);
+
+            return;
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+        $this->gateway = $this->get_payplug_gateway(isset($_POST['gateway']) ? wc_clean(wp_unslash($_POST['gateway'])) : '');
         $order = wc_get_order($order_id);
+
+        if (!$order instanceof \WC_Order || !$this->gateway) {
+            wp_send_json_error(__('Invalid order.', 'payplug'));
+
+            return;
+        }
+
+        // On order-pay, closing the payment sheet should keep the customer on the order-pay
+        // page, not cancel the order and send them to the cart like a fresh checkout attempt
+        // would.
+        $is_order_pay = is_wc_endpoint_url('order-pay') || !empty($_POST['order_pay_key']);
+
+        if (!empty($_POST['order_pay_key'])) {
+            $order_pay_key = wc_clean(wp_unslash($_POST['order_pay_key']));
+            if (!hash_equals($order->get_order_key(), $order_pay_key)) {
+                wp_send_json_error(__('Invalid order.', 'payplug'));
+
+                return;
+            }
+        }
+
+        $cancel_url = $is_order_pay
+            ? esc_url_raw($order->get_checkout_payment_url())
+            : esc_url_raw($order->get_cancel_order_url_raw());
+
         $customer_id = PayplugWoocommerceHelper::is_pre_30() ? $order->customer_user : $order->get_customer_id();
         $return_url = esc_url_raw($order->get_checkout_order_received_url());
         $address_data = PayplugAddressData::from_order($order);
@@ -477,7 +595,7 @@ class PayplugWoocommerceRequest
                     ])),
                 ],
             ];
-            $payment_data['hosted_payment']['cancel_url'] = esc_url_raw($order->get_cancel_order_url_raw());
+            $payment_data['hosted_payment']['cancel_url'] = $cancel_url;
             $payment_data['metadata']['applepay_workflow'] = 'checkout';
         }
 
@@ -503,7 +621,19 @@ class PayplugWoocommerceRequest
          */
         $payment_data = apply_filters('payplug_gateway_payment_data', $payment_data, $order_id, [], $address_data);
 
-        $payment = $this->gateway->payplug_api->payment_create($payment_data);
+        try {
+            $payment = $this->gateway->payplug_api->payment_create($payment_data);
+        } catch (HttpException $e) {
+            PayplugGateway::log(sprintf('Error while processing order #%s : %s', $order_id, wc_print_r($e->getErrorObject(), true)), 'error');
+            wp_send_json_error(__('Payment processing failed. Please retry.', 'payplug'));
+
+            return;
+        } catch (\Exception $e) {
+            PayplugGateway::log(sprintf('Error while processing order #%s : %s', $order_id, $e->getMessage()), 'error');
+            wp_send_json_error(__('Payment processing failed. Please retry.', 'payplug'));
+
+            return;
+        }
 
         // Save transaction id on the order
         PayplugWoocommerceHelper::is_pre_30() ? update_post_meta($order_id, '_transaction_id', $payment->id) : $order->set_transaction_id($payment->id);
@@ -519,7 +649,7 @@ class PayplugWoocommerceRequest
             'payment_id' => $payment->id,
             'merchant_session' => isset($payment->payment_method['merchant_session']) ? $payment->payment_method['merchant_session'] : null,
             'redirect' => !empty($payment->hosted_payment->payment_url) ? $payment->hosted_payment->payment_url : $return_url,
-            'cancel' => esc_url_raw($order->get_cancel_order_url_raw()),
+            'cancel' => $cancel_url,
         ]);
     }
 

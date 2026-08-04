@@ -5,30 +5,28 @@
 	var session = null;
 	var is_cart = apple_pay_params.is_cart;
 	var apple_pay = {
-		load_order_total: false,
 		init: function () {
 
 			if(!is_cart){
 				return;
 			}
 
-			apple_pay.updateOrderTotal();
+			apple_pay.updateOrderTotal(true);
 			$('apple-pay-button').on('click', apple_pay.ProcessCheckout)
 		},
-		updateOrderTotal: function(){
+		updateOrderTotal: function(fetchShippings){
 			jQuery.post(
 				apple_pay_params.ajax_url_applepay_get_order_totals
 
 			).done(function(results){
 				if(results.success){
 					apple_pay_params.total = results.data;
-
+					if(fetchShippings){
+						apple_pay.getShippings();
+					}
 				} else {
 					$apple_pay_button.remove();
 				}
-
-			}).done(function(){
-				apple_pay.getShippings();
 
 			}).fail( function() {
 				$apple_pay_button.remove();
@@ -201,7 +199,7 @@
 						},
 						dataType: 'json',
 						success:function(res) {
-							jQuery('woocommerce').unblock();
+							jQuery('.woocommerce').unblock();
 							var apple_pay_Session_status = ApplePaySession.STATUS_SUCCESS;
 
 							if (res.success !== true) {
@@ -243,7 +241,7 @@
 				}
 			}).done(function (response) {
 				apple_pay.showError(response.data.message, "info");
-				apple_pay.updateOrderTotal();
+				apple_pay.updateOrderTotal(true);
 			})
 		},
 		showError: function (message="", type = "info") {
@@ -265,11 +263,11 @@
 		}
 	}
 
-	$apple_pay_button.on("click", apple_pay.init());
+	apple_pay.init();
 
 	jQuery( 'body' ).on( 'updated_cart_totals', function() {
-		apple_pay.updateOrderTotal()
-		$apple_pay_button.on("click", apple_pay.init());
+		apple_pay.updateOrderTotal(false);
+		jQuery('apple-pay-button').off('click', apple_pay.ProcessCheckout).on('click', apple_pay.ProcessCheckout);
 	})
 
 })(jQuery)

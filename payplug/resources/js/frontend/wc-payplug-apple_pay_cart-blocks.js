@@ -1,12 +1,17 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 import { getSetting } from '@woocommerce/settings';
-import { apple_pay_CancelOrder, apple_pay_Payment, apple_pay_PlaceOrderWithDummyData, apple_pay_UpdateOrder} from "./helper/wc-payplug-apple_pay-requests";
+import { apple_pay_CancelOrder, apple_pay_Payment, apple_pay_PlaceOrderWithDummyData, apple_pay_UpdateOrder, apple_pay_get_shippings } from "./helper/wc-payplug-apple_pay-requests";
 const settings = getSetting( 'apple_pay_data', {} );
 
 const ApplePayCart = ( props ) =>{
 
-	let session = null;
+	// A plain local variable would be reset on every re-render, but it's read from
+	// async callbacks/DOM handlers that can fire well after a re-render has happened.
+	const sessionRef = useRef(null);
 	let apple_pay_Session_status = null;
+	// Same reasoning as sessionRef: fetched asynchronously in an effect below, then read
+	// later from CreateSession(), which can run after a re-render has reset a plain variable.
+	const carriersRef = useRef([]);
 	const apple_pay_wrapper = jQuery("#apple-pay-button-wrapper");
 	const apple_pay = {
 		load_order_total: false,
@@ -25,18 +30,13 @@ const ApplePayCart = ( props ) =>{
 					"supports3DS"
 				],
 				"supportedNetworks": [
-					"cartesBancaires",
 					"visa",
 					"masterCard"
-				],
-            	"supportedTypes": [
-					"debit",
-					"credit"
 				],
 				"total": {
 					"label": "Apple Pay",
 					"type": "final",
-					"amount": settings.total_amount/100
+					"amount": parseFloat(settings.total_amount/100)
 				},
 				'applicationData': btoa(JSON.stringify({
 					'apple_pay_domain': settings.apple_pay_domain
@@ -55,20 +55,21 @@ const ApplePayCart = ( props ) =>{
 
 			if (settings.payplug_apple_pay_shipping_required) {
 
-				request.shippingMethods = settings.payplug_carriers;
+				request.shippingMethods = carriersRef.current;
 
 			}
-			session = new ApplePaySession(4, request);
+			sessionRef.current = new ApplePaySession(4, request);
 
 		},
 		CancelOrder: function () {
-			session.oncancel = event => {
-				apple_pay_CancelOrder({'order_id': session.order_id, 'payment_id': session.payment_id}).then(() => {
+			sessionRef.current.oncancel = event => {
+				apple_pay_CancelOrder({'order_id': sessionRef.current.order_id, 'payment_id': sessionRef.current.payment_id}).then(() => {
 					enabled_button();
 				});
 			}
 		},
 		BeginSession: function (response) {
+			const session = sessionRef.current;
 			session.payment_id = response.payment_data.payment_id
 			session.order_id = response.order_id
 			session.cancel_url = response.payment_data.cancel_url
@@ -89,7 +90,7 @@ const ApplePayCart = ( props ) =>{
 
 				const update = {
 					newTotal: {
-						label: 'Total',
+						label: 'Apple Pay',
 						amount: newTotalAmount
 					},
 					newLineItems: [
@@ -115,35 +116,35 @@ const ApplePayCart = ( props ) =>{
 			}
 		},
 		AddErrorMessage: function(message){
-			apple_pay_wrapper.append(jQuery('<div class="apple-pay-cart-notice"></div>').append("<span>" + message + "</span>"));
+			apple_pay_wrapper.append(jQuery('<div class="apple-pay-cart-notice"></div>').append(jQuery('<span></span>').text(message)));
 		},
 		DeleteErrorMessage: function(){
 			setTimeout(function () {
-				jQuery('.apple-pay-cart-notice').contents().first().remove();
+				jQuery('.apple-pay-cart-notice').remove();
 			}, 4000);
 		}
 	}
 
 	function CheckPaymentOnPaymentAuthorized() {
 		return new Promise((resolve, reject) => {
-			session.onpaymentauthorized = event => {
+			sessionRef.current.onpaymentauthorized = event => {
 				let event_data = event.payment;
 
 				let data = {
-					'order_id': session.order_id,
+					'order_id': sessionRef.current.order_id,
 					'shipping' : event_data.shippingContact,
 					'billing' : event_data.billingContact,
-					'shipping_method' : session.shippingMethod
+					'shipping_method' : sessionRef.current.shippingMethod
 				};
 
 				apple_pay_UpdateOrder(data).then( (result_order) => {
 					data = {
 						'action': 'applepay_update_payment',
 						'post_type': 'POST',
-						'payment_id': session.payment_id,
+						'payment_id': sessionRef.current.payment_id,
 						'payment_token': event.payment.token,
-						'order_id': session.order_id,
-						'amount': session.amount
+						'order_id': sessionRef.current.order_id,
+						'amount': sessionRef.current.amount / 100
 					}
 
 					apple_pay_Payment(data).then((result_payment) => {
@@ -156,7 +157,7 @@ const ApplePayCart = ( props ) =>{
 							apple_pay.DeleteErrorMessage();
 							apple_pay.CancelOrder()
 						}
-						session.completePayment({"status": apple_pay_Session_status})
+						sessionRef.current.completePayment({"status": apple_pay_Session_status})
 						resolve();
 					});
 				});
@@ -164,8 +165,23 @@ const ApplePayCart = ( props ) =>{
 		})
 	}
 
-	jQuery(function ($) {
-		jQuery('apple-pay-button').on("click", (e) => {
+	useEffect(() => {
+		apple_pay_get_shippings().then((result_shippings) => {
+			carriersRef.current = result_shippings.data;
+		});
+	}, []);
+
+	function disabled_button(){
+		jQuery('apple-pay-button').addClass("isDisabled");
+	}
+
+	function enabled_button(){
+		jQuery('apple-pay-button').removeClass("isDisabled");
+	}
+
+	useEffect(() => {
+		const btn = document.getElementById('apple-pay-button');
+		const onApplePayButtonClick = (e) => {
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			disabled_button();
@@ -183,20 +199,20 @@ const ApplePayCart = ( props ) =>{
 				apple_pay.OrderPaymentCreated(response);
 
 				await CheckPaymentOnPaymentAuthorized().then((res) => {
-					window.location = session.return_url
+					window.location = sessionRef.current.return_url
 				});
 
 			});
-		});
-	});
-
-	function disabled_button(){
-		jQuery('apple-pay-button').addClass("isDisabled");
-	}
-
-	function enabled_button(){
-		jQuery('apple-pay-button').removeClass("isDisabled");
-	}
+		};
+		if (btn) {
+			btn.addEventListener('click', onApplePayButtonClick);
+		}
+		return () => {
+			if (btn) {
+				btn.removeEventListener('click', onApplePayButtonClick);
+			}
+		};
+	}, []);
 
 	return (<> </>);
 }

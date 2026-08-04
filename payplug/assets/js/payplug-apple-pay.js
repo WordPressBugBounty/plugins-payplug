@@ -4,11 +4,13 @@
 	var $apple_pay_button = $('apple-pay-button')
 	var session = null;
 	var is_checkout = apple_pay_params.is_checkout;
+	var is_order_pay = apple_pay_params.is_order_pay;
+	var $form = is_order_pay ? $('form#order_review') : $('form.woocommerce-checkout');
 	var apple_pay = {
 		load_order_total: false,
 		init: function () {
 			$apple_pay_button = $('apple-pay-button')
-			$apple_pay_button.on(
+			$apple_pay_button.off('click', apple_pay.ProcessCheckout).on(
 				'click',
 				apple_pay.ProcessCheckout
 			)
@@ -19,14 +21,21 @@
 			apple_pay.CreateSession()
 			apple_pay.CancelOrder()
 			apple_pay.PaymentCompleted()
-			$('form.woocommerce-checkout').block({ message: null, overlayCSS: { background: '#fff', opacity: 0.6 } })
-			$.post(
-				apple_pay_params.ajax_url_payplug_create_order,
-				$('form.woocommerce-checkout').serialize()
-			).done(apple_pay.OrdernPaymentCreated)
+			$form.block({ message: null, overlayCSS: { background: '#fff', opacity: 0.6 } })
+			var ajaxUrl = is_order_pay
+				? apple_pay_params.ajax_url_payplug_apple_pay_create_order_pay
+				: apple_pay_params.ajax_url_payplug_create_order;
+			var postData = is_order_pay
+				? {
+					order_id: apple_pay_params.order_pay_id,
+					order_key: apple_pay_params.order_pay_key,
+					'woocommerce-process-checkout-nonce': apple_pay_params.wp_nonce
+				}
+				: $form.serialize();
+			$.post(ajaxUrl, postData).done(apple_pay.OrdernPaymentCreated)
 		},
 		OrdernPaymentCreated: function (response) {
-			$('form.woocommerce-checkout').unblock()
+			$form.unblock()
 			if ('success' !== response.result) {
 				var error_messages = response.messages || ''
 				apple_pay.SubmitError(error_messages)
@@ -41,9 +50,9 @@
 			$('<div></div>')
 				.addClass('woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout')
 				.html(parsedHtml)
-				.prependTo($('form.woocommerce-checkout'))
-			$('form.woocommerce-checkout').removeClass('processing').unblock()
-			$('form.woocommerce-checkout').find('.input-text, select, input:checkbox').trigger('validate').blur()
+				.prependTo($form)
+			$form.removeClass('processing').unblock()
+			$form.find('.input-text, select, input:checkbox').trigger('validate').blur()
 			apple_pay.ScrollToNotices()
 			$(document.body).trigger('checkout_error')
 		},
@@ -96,7 +105,7 @@
 				try {
 					session.completeMerchantValidation(merchant_session)
 				} catch (err) {
-					alert(err)
+					apple_pay.CancelOrder();
 				}
 			}
 		},
@@ -156,13 +165,16 @@
 	}
 
 	var applePaycontroller = function(){
+		// On the order-pay page, the submit button only has id="place_order" (no
+		// name="woocommerce_checkout_place_order"), so both selectors are needed to
+		// disable it on both the regular checkout and the order-pay page.
 		if(jQuery("[name=payment_method]:checked").val() === "apple_pay"){
-			jQuery("[name=woocommerce_checkout_place_order]").prop("disabled", true);
+			jQuery("#place_order, [name=woocommerce_checkout_place_order]").prop("disabled", true);
 
 			//enable buttons
 			apple_pay.init();
 		}else{
-			jQuery("[name=woocommerce_checkout_place_order]").prop("disabled", false);
+			jQuery("#place_order, [name=woocommerce_checkout_place_order]").prop("disabled", false);
 		}
 	}
 

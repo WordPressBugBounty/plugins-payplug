@@ -17,14 +17,14 @@ if (!defined('ABSPATH')) {
  */
 class PayplugGatewayOney3x extends PayplugGenericGateway
 {
-    const ONEY_UNAVAILABLE_CODE_COUNTRY_NOT_ALLOWED = 2;
-    const ONEY_UNAVAILABLE_CODE_CART_SIZE_TOO_HIGH = 3;
-    const ONEY_DISALBE_CHECKOUT_OPTIONS = 4;
+    public const ONEY_UNAVAILABLE_CODE_COUNTRY_NOT_ALLOWED = 2;
+    public const ONEY_UNAVAILABLE_CODE_CART_SIZE_TOO_HIGH = 3;
+    public const ONEY_DISALBE_CHECKOUT_OPTIONS = 4;
 
-    const ONEY_PRODUCT_QUANTITY_MAXIMUM = 1000;
+    public const ONEY_PRODUCT_QUANTITY_MAXIMUM = 1000;
 
     protected $oney_response;
-    const ENABLE_ON_TEST_MODE = true;
+    public const ENABLE_ON_TEST_MODE = true;
 
     public $allowed_country_codes = [];
 
@@ -49,7 +49,7 @@ class PayplugGatewayOney3x extends PayplugGenericGateway
         }
     }
 
-    public function validate_checkout()
+    public function validate_checkout(): void
     {
         $posted_data = $this->get_post_data();
 
@@ -69,7 +69,7 @@ class PayplugGatewayOney3x extends PayplugGenericGateway
      *
      * @return void
      */
-    private function set_oney_configuration()
+    private function set_oney_configuration(): void
     {
         $account = PayplugWoocommerceHelper::get_account_data_from_options();
         if ($account) {
@@ -96,9 +96,7 @@ class PayplugGatewayOney3x extends PayplugGenericGateway
             foreach ($this->oney_response['x3_with_fees']['installments'] as $installment) {
                 $total_price_oney = $total_price_oney + floatval($installment['amount']);
             }
-            $f = function ($fn) {
-                return $fn;
-            };
+            $f = fn ($fn) => $fn;
 
             $tax_cost = floatval($this->oney_response['x3_with_fees']['total_cost']) / 100;
 
@@ -185,7 +183,12 @@ HTML;
             $country_code_shipping = $order->get_shipping_country();
             $country_code_billing = $order->get_billing_country();
 
-            $this->order_items_to_cart($cart, $items);
+            // Skip cart population for subscription renewals: WC Subscriptions manages the cart
+            // itself and adding items here would cause a double entry in the order summary.
+            $is_renewal = function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order);
+            if (!$is_renewal) {
+                $this->order_items_to_cart($cart, $items);
+            }
         }
 
         if (empty($cart->total)) {
@@ -427,7 +430,7 @@ HTML;
      *
      * @return void
      */
-    public function oney_refund_text($order)
+    public function oney_refund_text($order): void
     {
         if ($this->id === $order->get_payment_method() && parent::can_refund_order($order) && $order->get_status() !== 'refunded' && $this->payplug_api) {
             $order_metadata = $order->get_meta('_payplug_metadata');
@@ -447,7 +450,7 @@ HTML;
         }
     }
 
-    public function payment_fields()
+    public function payment_fields(): void
     {
         $description = $this->get_description();
         if (!empty($description)) {
@@ -497,7 +500,7 @@ HTML;
      *
      * @return void
      */
-    private function order_items_to_cart($cart, $items)
+    private function order_items_to_cart($cart, $items): void
     {
         $cart->empty_cart();
         foreach ($items as $item) {

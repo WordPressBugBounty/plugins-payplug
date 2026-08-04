@@ -9,5 +9,6 @@ return array(
     'libphonenumber\\' => array($baseDir . '/lib/libphonenumber'),
     'Payplug\\PayplugWoocommerce\\' => array($baseDir . '/src'),
     'Payplug\\' => array($vendorDir . '/payplug/payplug-php/lib/Payplug'),
+    'PayPlugPluginMcp\\' => array($vendorDir . '/payplug/payplug-plugin-mcp/src'),
     'Composer\\Installers\\' => array($vendorDir . '/composer/installers/src/Composer/Installers'),
 );

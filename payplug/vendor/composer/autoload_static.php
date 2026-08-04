@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
+class ComposerStaticInitda8d3a697b8327877b6ddbfc65e61825
 {
     public static $prefixLengthsPsr4 = array (
         'l' =>
@@ -15,6 +15,7 @@ class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
         array (
             'Payplug\\PayplugWoocommerce\\' => 27,
             'Payplug\\' => 8,
+            'PayPlugPluginMcp\\' => 17,
         ),
         'C' =>
         array (
@@ -34,6 +35,10 @@ class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
         'Payplug\\' =>
         array (
             0 => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug',
+        ),
+        'PayPlugPluginMcp\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src',
         ),
         'Composer\\Installers\\' =>
         array (
@@ -155,6 +160,19 @@ class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
         'Composer\\Installers\\YawikInstaller' => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers/YawikInstaller.php',
         'Composer\\Installers\\ZendInstaller' => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers/ZendInstaller.php',
         'Composer\\Installers\\ZikulaInstaller' => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers/ZikulaInstaller.php',
+        'PayPlugPluginMcp\\Actions\\PaymentAction' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Actions/PaymentAction.php',
+        'PayPlugPluginMcp\\Gateways\\AbstractPaymentGateway' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Gateways/AbstractPaymentGateway.php',
+        'PayPlugPluginMcp\\Gateways\\PaymentGatewayManager' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Gateways/PaymentGatewayManager.php',
+        'PayPlugPluginMcp\\Gateways\\Payment\\EmailLinkPaymentGateway' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Gateways/Payment/EmailLinkPaymentGateway.php',
+        'PayPlugPluginMcp\\Gateways\\Payment\\StandardPaymentGateway' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Gateways/Payment/StandardPaymentGateway.php',
+        'PayPlugPluginMcp\\Gateways\\RefundGateway' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Gateways/RefundGateway.php',
+        'PayPlugPluginMcp\\Models\\Entities\\PaymentInputDTO' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Models/Entities/PaymentInputDTO.php',
+        'PayPlugPluginMcp\\Models\\Entities\\PaymentOutputDTO' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Models/Entities/PaymentOutputDTO.php',
+        'PayPlugPluginMcp\\Models\\Entities\\RefundInputDTO' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Models/Entities/RefundInputDTO.php',
+        'PayPlugPluginMcp\\Models\\Entities\\RefundOutputDTO' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Models/Entities/RefundOutputDTO.php',
+        'PayPlugPluginMcp\\Utilities\\Services\\Api' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Utilities/Services/Api.php',
+        'PayPlugPluginMcp\\Validators\\PaymentResourceValidator' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Validators/PaymentResourceValidator.php',
+        'PayPlugPluginMcp\\Validators\\RefundValidator' => __DIR__ . '/..' . '/payplug/payplug-plugin-mcp/src/Validators/RefundValidator.php',
         'Payplug\\AccountingReport' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/AccountingReport.php',
         'Payplug\\Authentication' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Authentication.php',
         'Payplug\\Card' => __DIR__ . '/..' . '/payplug/payplug-php/lib/Payplug/Card.php',
@@ -258,6 +276,7 @@ class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
         'Payplug\\PayplugWoocommerce\\PayplugWoocommerceRequest' => __DIR__ . '/../..' . '/src/PayplugWoocommerceRequest.php',
         'Payplug\\PayplugWoocommerce\\Service\\Api' => __DIR__ . '/../..' . '/src/Service/Api.php',
         'Payplug\\PayplugWoocommerce\\Service\\Configuration' => __DIR__ . '/../..' . '/src/Service/Configuration.php',
+        'Payplug\\PayplugWoocommerce\\Service\\Mcp' => __DIR__ . '/../..' . '/src/Service/Mcp.php',
         'Payplug\\PayplugWoocommerce\\Service\\Upgrade' => __DIR__ . '/../..' . '/src/Service/Upgrade.php',
         'Payplug\\PayplugWoocommerce\\Traits\\AdapterGetter' => __DIR__ . '/../..' . '/src/Traits/AdapterGetter.php',
         'Payplug\\PayplugWoocommerce\\Traits\\GatewayGetter' => __DIR__ . '/../..' . '/src/Traits/GatewayGetter.php',
@@ -306,10 +325,10 @@ class ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit0b7b0b6da3723b0f104ecb2d4481a077::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitda8d3a697b8327877b6ddbfc65e61825::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitda8d3a697b8327877b6ddbfc65e61825::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitda8d3a697b8327877b6ddbfc65e61825::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitda8d3a697b8327877b6ddbfc65e61825::$classMap;
 
         }, null, ClassLoader::class);
     }

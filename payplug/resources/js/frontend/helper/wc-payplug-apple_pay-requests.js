@@ -9,23 +9,45 @@ export const getPayment = (props, order_id) => {
 			type: 'POST',
 			data: data,
 			url: settings.payplug_create_intent_payment,
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (error) {
+		}).fail(function (error) {
 			reject(error);
 
 		});
 	});
 
 	function getPaymentData(props) {
-		return {
+		const data = {
 			"order_id": order_id,
 			"woocommerce-process-checkout-nonce": settings.wp_nonce,
 			"gateway": "apple_pay"
+		};
+
+		if (settings.is_order_pay) {
+			data.order_pay_key = settings.order_pay_key;
 		}
+
+		return data;
 	}
 };
+
+export const apple_pay_get_shippings = (data) => {
+	return new Promise((resolve, reject) => {
+		$.ajax({
+			type: 'POST',
+			data: data,
+			url: settings.ajax_url_applepay_get_shippings
+		}).done(function (response) {
+			resolve(response);
+
+		}).fail(function (xhr, status, error) {
+			reject(error);
+
+		});
+	});
+}
 
 export const apple_pay_update_payment = (data) => {
 	return new Promise((resolve, reject) => {
@@ -33,11 +55,11 @@ export const apple_pay_update_payment = (data) => {
 			type: 'POST',
 			data: data,
 			url: settings.ajax_url_applepay_update_payment
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (xhr, status, error) {
-			reject(error); // NOT WORKING!!
+		}).fail(function (xhr, status, error) {
+			reject(error);
 
 		});
 	});
@@ -49,11 +71,11 @@ export const apple_pay_UpdateOrder = (data) =>{
 			type: 'POST',
 			data: data,
 			url: settings.ajax_url_update_applepay_order
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (xhr, status, error) {
-			reject(error); // NOT WORKING!!
+		}).fail(function (xhr, status, error) {
+			reject(error);
 		});
 	});
 }
@@ -64,11 +86,11 @@ export const apple_pay_Payment = (data) =>{
 			type: 'POST',
 			data: data,
 			url: settings.ajax_url_update_applepay_payment
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (xhr, status, error) {
-			reject(error); // NOT WORKING!!
+		}).fail(function (xhr, status, error) {
+			reject(error);
 		});
 	});
 }
@@ -79,11 +101,11 @@ export const apple_pay_PlaceOrderWithDummyData = (data) =>{
 			type: 'POST',
 			data: data,
 			url: settings.ajax_url_place_order_with_dummy_data
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (xhr, status, error) {
-			reject(error); // NOT WORKING!!
+		}).fail(function (xhr, status, error) {
+			reject(error);
 		});
 	});
 }
@@ -94,12 +116,11 @@ export const apple_pay_CancelOrder = (data) =>{
 			type: 'POST',
 			data: data,
 			url: settings.ajax_url_applepay_cancel_order
-		}).success(function (response) {
+		}).done(function (response) {
 			resolve(response);
 
-		}).error(function (xhr, status, error) {
-			reject(error); // NOT WORKING!!
+		}).fail(function (xhr, status, error) {
+			reject(error);
 		});
 	});
 }
-

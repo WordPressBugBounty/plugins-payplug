@@ -7,8 +7,9 @@
  * Author URI:      https://www.payplug.com/
  * Text Domain:     payplug
  * Domain Path:     /languages
- * Version:         2.18.0
+ * Version:         3.0.0
  * WC tested up to: 10.6.1
+ * Requires PHP:     7.4
  * Requires plugins: woocommerce
  * License:         GPLv3 or later
  * License URI:     https://www.gnu.org/licenses/gpl-3.0.html
@@ -21,7 +22,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PAYPLUG_GATEWAY_VERSION', '2.18.0');
+define('PAYPLUG_GATEWAY_VERSION', '3.0.0');
 define('PAYPLUG_MAX_VERSION_FOR_UPGRADE', '2.16.1');
 define('PAYPLUG_GATEWAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PAYPLUG_GATEWAY_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -39,7 +40,7 @@ define('PAYPLUG_GATEWAY_PLUGIN_BASENAME', plugin_basename(__FILE__));
 global $mo;
 $mo = new \MO();
 
-function init()
+function init(): void
 {
     if (file_exists(plugin_dir_path(__FILE__) . '/vendor/autoload.php')) {
         require_once plugin_dir_path(__FILE__) . '/vendor/autoload.php';
@@ -57,7 +58,7 @@ function init()
     $GLOBALS['mo']->import_from_file($path);
 }
 
-function create_lock_table()
+function create_lock_table(): void
 {
     init();
     \Payplug\PayplugWoocommerce\Model\Lock::create_lock_table();
@@ -67,7 +68,121 @@ add_action('upgrader_process_complete', __NAMESPACE__ . '\\create_lock_table', 1
 add_action('activated_plugin', __NAMESPACE__ . '\\create_lock_table', 10, 2);
 add_action('plugins_loaded', __NAMESPACE__ . '\\init');
 
-add_action('before_woocommerce_init', function () {
+/**
+ * ============================================================================
+ * MCP (Model Context Protocol) Integration for WooCommerce
+ * ============================================================================
+ */
+
+// Register PayPlug ability category
+add_action('wp_abilities_api_categories_init', function (): void {
+    wp_register_ability_category(
+        'payplug',
+        [
+            'label' => __('PayPlug Payments', 'payplug'),
+            'description' => __('Abilities for PayPlug payment processing in WooCommerce.', 'payplug'),
+        ]
+    );
+});
+
+// Register PayPlug abilities
+add_action('wp_abilities_api_init', function (): void {
+    wp_register_ability(
+        'payplug/create-payment-link',
+        [
+            'label' => __('Create Payment Link', 'payplug'),
+            'description' => __('Creates a payment link to send to a customer for online payment in WooCommerce.', 'payplug'),
+            'category' => 'payplug',
+            'input_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'customer' => [
+                        'type' => 'object',
+                        'description' => __('Customer information object.', 'payplug'),
+                        'properties' => [
+                            'customer_id' => ['type' => 'integer', 'description' => __('WooCommerce customer ID.', 'payplug')],
+                            'customer_address_title' => ['type' => 'string', 'description' => __('Customer civility: "mr" or "mrs".', 'payplug')],
+                            'customer_address_first_name' => ['type' => 'string', 'description' => __('Customer first name.', 'payplug')],
+                            'customer_address_last_name' => ['type' => 'string', 'description' => __('Customer last name.', 'payplug')],
+                            'customer_address_mobile_phone_number' => ['type' => 'string', 'description' => __('Phone number in E.164 format.', 'payplug')],
+                            'customer_address_email' => ['type' => 'string', 'description' => __('Customer email address.', 'payplug')],
+                            'customer_address_address1' => ['type' => 'string', 'description' => __('Primary street address.', 'payplug')],
+                            'customer_address_address2' => ['type' => 'string', 'description' => __('Secondary address line.', 'payplug')],
+                            'customer_address_postcode' => ['type' => 'string', 'description' => __('Postal/ZIP code.', 'payplug')],
+                            'customer_address_city' => ['type' => 'string', 'description' => __('City name.', 'payplug')],
+                            'customer_address_country' => ['type' => 'string', 'description' => __('Country ISO code (e.g., FR).', 'payplug')],
+                            'customer_address_language' => ['type' => 'string', 'description' => __('Language ISO code (e.g., fr).', 'payplug')],
+                        ],
+                        'required' => ['customer_id', 'customer_address_email', 'customer_address_first_name', 'customer_address_last_name', 'customer_address_address1', 'customer_address_postcode', 'customer_address_city', 'customer_address_country', 'customer_address_language'],
+                    ],
+                    'cart' => [
+                        'type' => 'object',
+                        'description' => __('Shopping cart with products.', 'payplug'),
+                        'properties' => [
+                            'products' => [
+                                'type' => 'array',
+                                'description' => __('Array of products to add to cart.', 'payplug'),
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'product_id' => ['type' => 'integer', 'description' => __('WooCommerce product ID.', 'payplug')],
+                                        'qty' => ['type' => 'integer', 'description' => __('Quantity.', 'payplug')],
+                                        'variation_id' => ['type' => 'integer', 'description' => __('Variation ID for variable products.', 'payplug')],
+                                    ],
+                                    'required' => ['product_id', 'qty'],
+                                ],
+                            ],
+                        ],
+                        'required' => ['products'],
+                    ],
+                ],
+                'required' => ['customer', 'cart'],
+            ],
+            'output_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'result' => ['type' => 'boolean'],
+                    'code' => ['type' => ['integer', 'null']],
+                    'message' => ['type' => ['string', 'null']],
+                    'order_id' => ['type' => ['integer', 'null']],
+                    'resource_id' => ['type' => ['string', 'null']],
+                    'payment_url' => ['type' => ['string', 'null']],
+                ],
+                'required' => ['result'],
+            ],
+            'execute_callback' => function ($input) {
+                $mcp = new \Payplug\PayplugWoocommerce\Service\Mcp();
+
+                return $mcp->createByLink($input['customer'], $input['cart']);
+            },
+            'permission_callback' => fn () => current_user_can('manage_woocommerce'),
+        ]
+    );
+});
+
+// Enable MCP integration for WooCommerce
+add_filter('woocommerce_features', function ($features) {
+    $features['mcp_integration'] = true;
+
+    return $features;
+});
+
+// Include PayPlug abilities in WooCommerce MCP Server
+add_filter('woocommerce_mcp_include_ability', function ($include, $ability_id) {
+    if (strpos($ability_id, 'payplug/') === 0) {
+        return true;
+    }
+
+    return $include;
+}, 10, 2);
+
+add_filter('woocommerce_mcp_ability_permissions', function ($permissions) {
+    // Autorise les utilisateurs ayant la capacité de gérer WooCommerce
+    $permissions['payplug/create-payment-link'] = 'manage_woocommerce';
+
+    return $permissions;
+});
+add_action('before_woocommerce_init', function (): void {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
     }

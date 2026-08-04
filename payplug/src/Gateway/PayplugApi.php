@@ -33,6 +33,11 @@ class PayplugApi
     private $api_payplug;
 
     /**
+     * @var string
+     */
+    private $bearer_token = '';
+
+    /**
      * PayplugApi constructor.
      *
      * @param PayplugGateway $gateway
@@ -95,10 +100,11 @@ class PayplugApi
     /**
      * Configure PayPlug client.
      */
-    public function init()
+    public function init(): void
     {
         $current_mode = PayplugWoocommerceHelper::check_mode() ? 'live' : 'test';
         $bearer_token = $this->get_api()->get_bearer_token($current_mode);
+        $this->bearer_token = (string) $bearer_token;
         try {
             $this->api_payplug = Payplug::init([
                 'secretKey' => (string) $bearer_token,
@@ -129,6 +135,18 @@ class PayplugApi
                 throw $e;
             }
         }
+    }
+
+    /**
+     * The bearer token resolved by init(), so callers built right after it (see
+     * PayplugGateway::init_payplug()) can reuse it instead of calling
+     * Api::get_bearer_token() again for the same mode.
+     *
+     * @return string
+     */
+    public function get_current_bearer_token(): string
+    {
+        return $this->bearer_token;
     }
 
     /**
@@ -309,7 +327,7 @@ class PayplugApi
      *
      * @throws \Payplug\Exception\ConfigurationException
      */
-    protected function switch_mode()
+    protected function switch_mode(): void
     {
         $switched_mode = 'test' === $this->gateway->get_current_mode() ? 'live' : 'test';
         $new_key = $this->gateway->get_api_key($switched_mode);
@@ -328,7 +346,7 @@ class PayplugApi
      *
      * @throws \Payplug\Exception\ConfigurationException
      */
-    protected function restore_mode()
+    protected function restore_mode(): void
     {
         $key = $this->gateway->get_api_key($this->gateway->get_current_mode());
         if (empty($key)) {

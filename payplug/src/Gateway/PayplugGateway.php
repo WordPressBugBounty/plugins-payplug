@@ -26,7 +26,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
 {
     use ServiceGetter;
 
-    const OPTION_NAME = 'payplug_config';
+    public const OPTION_NAME = 'payplug_config';
 
     /**
      * @var string
@@ -92,12 +92,12 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * @var float
      */
-    const MIN_AMOUNT = 0.99;
+    public const MIN_AMOUNT = 0.99;
 
     /**
      * @var float
      */
-    const MAX_AMOUNT = 20000;
+    public const MAX_AMOUNT = 20000;
 
     /**
      * @var string
@@ -110,7 +110,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     public $max_oney_price;
     public $oney_thresholds_max;
 
-    const ENABLE_ON_TEST_MODE = true;
+    public const ENABLE_ON_TEST_MODE = true;
 
     /**
      * Logging method.
@@ -119,7 +119,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
      * @param string $level Optional. Default 'info'.
      *                      emergency|alert|critical|error|warning|notice|info|debug
      */
-    public static function log($message, $level = 'info')
+    public static function log($message, $level = 'info'): void
     {
         if (!self::$log_enabled) {
             return;
@@ -240,7 +240,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
      *
      * @throws \WC_Data_Exception
      */
-    public function validate_payment($id = null, $save_request = true, $ipn = false)
+    public function validate_payment($id = null, $save_request = true, $ipn = false): void
     {
         global $wp;
 
@@ -329,7 +329,15 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     public function is_available()
     {
         if ('yes' == $this->enabled) {
-            return $this->requirements->satisfy_requirements() && !empty($this->get_api_key($this->get_current_mode()));
+            $available = $this->requirements->satisfy_requirements() && !empty($this->get_api_key($this->get_current_mode()));
+
+            // $this->enabled only reflects the country/context check as it was at gateway construction time,
+            // so re-run it here to catch context that only becomes known later in the request (e.g. order-pay).
+            if ($available && method_exists($this, 'checkGateway')) {
+                $available = $this->checkGateway();
+            }
+
+            return $available;
         }
 
         return parent::is_available();
@@ -338,7 +346,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * Load gateway settings.
      */
-    public function init_settings()
+    public function init_settings(): void
     {
         parent::init_settings();
         $enabled = !empty($this->settings['enabled']) && (bool) $this->settings['enabled'];
@@ -348,7 +356,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * Register gateway settings.
      */
-    public function init_form_fields()
+    public function init_form_fields(): void
     {
         $anchor = esc_html_x(__('More informations', 'payplug'), 'modal', 'payplug');
         $domain = __('support.payplug.com/hc/fr/articles/4408142346002', 'payplug');
@@ -545,12 +553,14 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * Set global configuration for PayPlug instance.
      */
-    public function init_payplug()
+    public function init_payplug(): void
     {
         $this->payplug_api = new PayplugApi($this);
         $this->payplug_api->init();
 
-        $this->permissions = new PayplugPermissions($this);
+        // init() just resolved this for the same mode - reuse it instead of asking
+        // Service\Api::get_bearer_token() to do so again right after.
+        $this->permissions = new PayplugPermissions($this, $this->payplug_api->get_current_bearer_token());
         $this->response = new PayplugResponse($this);
 
         // Register IPN handler
@@ -629,7 +639,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * extra payment fields
      */
-    public function payment_fields()
+    public function payment_fields(): void
     {
         $description = $this->get_description();
 
@@ -646,7 +656,7 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     /**
      * Handle admin display.
      */
-    public function admin_options()
+    public function admin_options(): void
     {
         /************ VUE Code *************/
         wp_enqueue_script('chunk-vendors.js', PAYPLUG_GATEWAY_PLUGIN_URL . 'assets/dist/js/chunk-vendors-' . PAYPLUG_GATEWAY_VERSION . '.js', [], PAYPLUG_GATEWAY_VERSION);
@@ -711,6 +721,30 @@ class PayplugGateway extends WC_Payment_Gateway_CC
     }
 
     /**
+     * Whether the current request is repaying an existing order (order-pay page, or one of
+     * the order-pay AJAX flows). The order_key/order_pay_key posted by those AJAX flows must
+     * match the order's own key: their mere presence isn't proof of anything, since any
+     * request can set them.
+     *
+     * @param \WC_Order|null $order
+     *
+     * @return bool
+     */
+    protected function is_order_pay_request($order): bool
+    {
+        if (is_wc_endpoint_url('order-pay')) {
+            return true;
+        }
+
+        $posted_key = $_POST['order_pay_key'] ?? $_POST['order_key'] ?? '';
+        if (empty($posted_key)) {
+            return false;
+        }
+
+        return $order instanceof \WC_Order && hash_equals($order->get_order_key(), wc_clean(wp_unslash($posted_key)));
+    }
+
+    /**
      * if payment was generated by an intend, we shouldn't generate another one and try to pay it, this would generate duplications
      *
      * @param $order
@@ -721,14 +755,20 @@ class PayplugGateway extends WC_Payment_Gateway_CC
      */
     private function process_standard_intent_payment($order)
     {
+        // This can run from AJAX endpoints whose own request URL never carries the order-pay
+        // query var, so is_wc_endpoint_url() alone can't detect that context here: fall back
+        // to the order_key/order_pay_key sent by the order-pay AJAX flows.
+        $is_order_pay = $this->is_order_pay_request($order);
+
         //no order-pay page, no ajax_on_order_review_page
-        if (!is_wc_endpoint_url('order-pay') &&
+        if (!$is_order_pay &&
             PayplugWoocommerceHelper::is_checkout_block() &&
             (
                 ('payplug' == $this->id && in_array($this->embedded_mode, ['integrated', 'popup'])) ||
                 ('american_express' == $this->id && 'popup' == $this->embedded_mode)
             ) &&
-            $_GET['wc-ajax'] !== 'payplug_order_review_url'
+            ($_GET['wc-ajax'] ?? '') !== 'payplug_order_review_url' &&
+            !empty($order->get_transaction_id())
         ) {
             $order_id = PayplugWoocommerceHelper::is_pre_30() ? $order->id : $order->get_id();
 
@@ -767,14 +807,22 @@ class PayplugGateway extends WC_Payment_Gateway_CC
 
                 $return_url = esc_url_raw($order->get_checkout_order_received_url());
 
-                wp_send_json_success([
+                $result = [
                     'payment_id' => $payment->id,
                     'result' => 'success',
                     'redirect' => !empty($payment->hosted_payment->payment_url) ? $payment->hosted_payment->payment_url : $return_url,
                     'cancel' => !empty($payment->hosted_payment->cancel_url) ? $payment->hosted_payment->cancel_url : null,
-                ]);
+                ];
 
-                return ['stt' => 'OK'];
+                // wp_send_json_success() calls die(), which is only safe for the classic
+                // wc-ajax request this was written for: the Store API checkout flow (used by
+                // the checkout block) calls process_payment() through the REST framework,
+                // and killing the process mid-request there produces a broken response.
+                if (wp_doing_ajax()) {
+                    wp_send_json_success($result);
+                }
+
+                return $result;
             } catch (HttpException $e) {
                 self::log(sprintf('Error while processing order #%s : %s', $order_id, wc_print_r($e->getErrorObject(), true)), 'error');
                 throw new \Exception(__('Payment processing failed. Please retry.', 'payplug'));
